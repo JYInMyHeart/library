@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>图书列表</title>
+  <link rel="stylesheet" href="../static/layui/css/layui.css"/>
+  <link rel="stylesheet" href="../static/css/bootstrap.min.css"/>
+</head>
+<body>
+<div class="container" style="width: 90%;">
+  <br/>
+  <br/>
+
+  <fieldset class="layui-elem-field layui-field-title">
+    <legend style="margin-left: 20px;padding: 0 10px;text-align: left;width: 170px;border-bottom: none;">
+      <strong>图书列表</strong></legend>
+  </fieldset>
+  <br/>
+  <h5 style="margin-top: -20px;">
+    <i class="fa fa-paper-plane-o fa-fw" style="color: #299A74"></i>
+    <span style="color: #299A74;"><strong>输入查询信息</strong></span>
+  </h5>
+  <hr style="margin-top: 0;"/>
+  <div class="form table">
+    <div>
+      <div class="layui-form-item">
+        <label class="layui-form-label" style="margin-left: -10px;padding-left:0;"><strong>图书名称</strong></label>
+        <div class="layui-input-inline">
+          <input id="book_name" placeholder="请输入图书名称查询" class="layui-input" type="text">
+        </div>
+        <div class="layui-input-inline" style="margin-left: 50px;">
+          <button class="layui-btn" onclick="queryBook()">查询</button>
+          <button class="layui-btn" onclick="add()">添加</button>
+        </div>
+        <div class="layui-input-inline">
+          <button class="layui-btn" onclick="function exportData() {
+            table.exportFile('test',table.data,'xls')
+          }
+          exportData()">导出
+          </button>
+        </div>
+      </div>
+      <div class="layui-upload layui-form-item">
+        <button type="button" class="layui-btn layui-btn-normal" id="testList">图书导入</button>
+        <div class="layui-upload-list">
+          <table class="layui-table">
+            <thead>
+            <tr><th>文件名</th>
+              <th>大小</th>
+              <th>状态</th>
+              <th>操作</th>
+            </tr></thead>
+            <tbody id="demoList"></tbody>
+          </table>
+        </div>
+        <button type="button" class="layui-btn" id="testListAction">开始导入</button>
+      </div>
+    </div>
+  </div>
+  <h5>
+    <i class="fa fa-paper-plane-o fa-fw" style="color: #299A74"></i>
+    <span style="color: #299A74;"><strong>查询结果展示</strong></span>
+  </h5>
+
+
+  <br/>
+  <br/>
+  <div class="table-responsive">
+    <table class="layui-hide" id="test" lay-filter="test"></table>
+  </div>
+
+
+  <form class="layui-form" lay-filter="editOrAdd" action=""
+        style="margin-top:20px;display:none;text-align: center"
+        id="editOrAdd">
+    <div class="layui-form-item">
+      <label class="layui-form-label">图书名</label>
+      <div class="layui-input-inline">
+        <input type="text" name="book_name" required lay-verify="required"
+               autocomplete="off"
+               placeholder="请输入图书名称" class="layui-input">
+      </div>
+    </div>
+    <div class="layui-form-item">
+      <label class="layui-form-label">分类</label>
+      <div class="layui-input-inline">
+        <input type="text" name="book_tag" required lay-verify="required"
+               autocomplete="off"
+               placeholder="请输入图书分类" class="layui-input">
+      </div>
+    </div>
+    <div class="layui-form-item">
+      <label class="layui-form-label">作者</label>
+      <div class="layui-input-inline">
+        <input type="text" name="book_authro" required lay-verify="required"
+               autocomplete="off"
+               placeholder="请输入图书作者" class="layui-input">
+      </div>
+    </div>
+    <div class="layui-form-item">
+      <label class="layui-form-label">发布时间</label>
+      <div class="layui-input-inline">
+        <input type="text" class="layui-input" name="book_publish_time" id="book_publish_time" placeholder="yyyy-MM-dd">
+      </div>
+    </div>
+
+    <div class="layui-form-item">
+      <label class="layui-form-label">条形码</label>
+      <div class="layui-upload-drag" id="logo">
+        <i class="layui-icon">&#xe67c;</i>
+        <p>点击上传，或将条形码拖拽到此处</p>
+        <div class="layui-hide" id="uploadDemoView">
+          <hr>
+          <img src="" alt="上传成功后渲染" style="max-width: 196px">
+        </div>
+        <input  hidden id="book_bar_path"/>
+      </div>
+    </div>
+  </form>
+</div>
+<style>
+  .layui-table-cell{
+    height:auto !important;
+  }
+</style>
+
+</body>
+<script src="../static/js/jquery-3.3.1.min.js"></script>
+<script src="../static/layui/layui.all.js"></script>
+<script src="../static/js/bootstrap.js"></script>
+<script src="../static/js/ajax.js"></script>
+<script type="text/html" id="toolbarDemo">
+  <div class="layui-btn-container">
+    <button class="layui-btn layui-btn-sm" lay-event="delete">删除</button>
+    <button class="layui-btn layui-btn-sm" lay-event="update">编辑</button>
+  </div>
+</script>
+<script type="text/html" id="toolbarDemo1">
+  <div class="layui-btn-container">
+    <button class="layui-btn layui-btn-sm" lay-event="read">借阅</button>
+  </div>
+</script>
+<script type="text/html" id="imgTpl">
+  <img src="data:image/jpg;base64,{{d.bookBarPath}}" />
+</script>
+<script type="text/javascript">
+  const token = window.sessionStorage.getItem('token')
+  var element
+  var laypage
+  var util
+  layui.use('element', function () {
+    element = layui.element;
+  });
+  layui.use('laypage', function () {
+    laypage = layui.laypage
+  });
+  layui.use('util',function () {
+    util = layui.util
+  })
+  layui.use('laydate', function() {
+    var laydate = layui.laydate;
+
+    //常规用法
+    laydate.render({
+      elem: '#book_publish_time'
+    });
+  });
+    layui.use('upload', function () {
+    var upload = layui.upload;
+
+    //执行实例
+    var uploadInst = upload.render({
+      elem: '#logo' //绑定元素
+      , url: basePath + '/book/upload/' //上传接口
+      , headers: {
+        token: token
+      }
+      , accept: 'images'
+      , acceptMime: 'image/*'
+      , auto: true
+      , drag: true
+      , done: function (res) {
+        layer.msg('上传成功');
+        layui.$('#uploadDemoView').removeClass('layui-hide').find('img').attr('src', "data:image/jpg;base64," + res.data.src);
+        $('#book_bar_path').val(res.data.src)
+      }
+      , error: function () {
+        layer.msg('网络异常，请稍后重试')
+      }
+    });
+
+
+      var demoListView = $('#demoList')
+        ,uploadListIns = upload.render({
+        elem: '#testList'
+        ,url: basePath + '/book/uploadBook' //改成您自己的上传接口
+        ,accept: 'file'
+        ,exts: 'xls|xlsx'
+        ,acceptMime: 'file/xlsx, file/xls'
+        ,multiple: true
+        ,headers:{
+          token:token
+        }
+        ,auto: false
+        ,bindAction: '#testListAction'
+        ,choose: function(obj){
+          var files = this.files = obj.pushFile(); //将每次选择的文件追加到文件队列
+          //读取本地文件
+          obj.preview(function(index, file, result){
+            var tr = $(['<tr id="upload-'+ index +'">'
+              ,'<td>'+ file.name +'</td>'
+              ,'<td>'+ (file.size/1024).toFixed(1) +'kb</td>'
+              ,'<td>等待上传</td>'
+              ,'<td>'
+              ,'<button class="layui-btn layui-btn-xs demo-reload layui-hide">重传</button>'
+              ,'<button class="layui-btn layui-btn-xs layui-btn-danger demo-delete">删除</button>'
+              ,'</td>'
+              ,'</tr>'].join(''));
+
+            //单个重传
+            tr.find('.demo-reload').on('click', function(){
+              obj.upload(index, file);
+            });
+
+            //删除
+            tr.find('.demo-delete').on('click', function(){
+              delete files[index]; //删除对应的文件
+              tr.remove();
+              uploadListIns.config.elem.next()[0].value = ''; //清空 input file 值，以免删除后出现同名文件不可选
+            });
+
+            demoListView.append(tr);
+          });
+        }
+        ,done: function(res, index, upload){
+          if(res.code === 0){ //上传成功
+            const tr = demoListView.find('tr#upload-'+ index)
+              ,tds = tr.children();
+            tds.eq(2).html('<span style="color: #5FB878;">上传成功</span>');
+            tds.eq(3).html(''); //清空操作
+            return delete this.files[index]; //删除文件队列已经上传成功的文件
+          }
+          this.error(index, upload);
+        }
+        ,error: function(index, upload){
+          var tr = demoListView.find('tr#upload-'+ index)
+            ,tds = tr.children();
+          tds.eq(2).html('<span style="color: #FF5722;">上传失败</span>');
+          tds.eq(3).find('.demo-reload').removeClass('layui-hide'); //显示重传
+        }
+      });
+  });
+  let table = {}
+  let form = {}
+  layui.use('form', function () {
+    form = layui.form; //只有执行了这一步，部分表单元素才会自动修饰成功
+  });
+  form.render()
+  layui.use('table', function () {
+    table = layui.table;
+    let role = window.sessionStorage.getItem('userRole');
+    let columns = [[
+      {type:'checkbox'}
+      , {field: 'bookName', width: '10%', title: '图书名'}
+      , {field: 'bookTag', width: '10%', title: '分类'}
+      , {field: 'bookAuthor', width: '20%', title: '作者'}
+      , {field: 'bookPublishTime', title: '发布时间', width: '20%',
+        templet: function (d) {
+          return ''+ util.toDateString(d.bookPublishTime,'yyyy-MM-dd')
+        }}
+      , {field: 'bookBarPath', title: '条形码', width: '20%',templet: '#imgTpl', unresize: true}
+
+    ]]
+    if (role === '3') {
+      columns[0].push(
+        { width: '20%', align: 'center', toolbar: '#toolbarDemo1', id: 'tool'})
+    }else{
+      columns[0].push(
+        { width: '20%', align: 'center', toolbar: '#toolbarDemo', id: 'tool'})
+    }
+    table.render({
+      elem: '#test'
+      , method: 'get'
+      , page: true
+      , headers: {
+        token: token
+      }
+      , url: basePath + '/book/list'
+      , cols: columns
+      , parseData: function (res) { //res 即为原始返回的数据
+        return {
+          "code": res.code, //解析接口状态
+          "msg": res.msg, //解析提示文本
+          "count": res.count, //解析数据长度
+          "data": res.data.records //解析数据列表
+        };
+      }
+    });
+  });
+
+  table.on('tool(test)', function (obj) { //注：tool 是工具条事件名，test 是 table 原始容器的属性 lay-filter="对应的值"
+    let data = obj.data; //获得当前行数据
+    let layEvent = obj.event; //获得 lay-event 对应的值（也可以是表头的 event 参数对应的值）
+
+
+
+    if (layEvent === 'delete') { //删除
+      layer.confirm('确定删除该图书么', function (index) {
+        //删除对应行（tr）的DOM结构，并更新缓存
+        layer.close(index);
+        del(data.bookId)
+      });
+    } else if (layEvent === 'update') { //编辑
+      let result = update("修改", obj)
+      obj.update(result);
+    }else if(layEvent === 'read'){
+      read(obj.data.bookId)
+    }
+  });
+
+  function read(bookId) {
+    const callback = function (res){
+      if(res.code === 201){
+        layer.msg('存书不足')
+      }else if(res.code === 200){
+        layer.msg('借阅成功')
+      }
+    }
+    const userId = window.sessionStorage.getItem('userId')
+    const day2 = new Date()
+    const s2 = util.toDateString(day2.getTime(),'yyyy-MM-dd')
+    day2.setMonth(day2.getMonth() + 1)
+    const s3 = util.toDateString (day2.getTime(),'yyyy-MM-dd')
+    const data = {
+      userId:userId,
+      bookId:bookId,
+      bookCount:1,
+      borrowStartTime: s2,
+      borrowTime: s3
+    }
+    ajaxPost('/borrow/add',data,token,callback)
+  }
+  function queryBook() {
+    let bookname = $('#book_name').val()
+
+    table.reload('test', {
+      elem: '#test'
+      , method: 'get'
+      , url: basePath + '/book/list?keyword=' + bookname
+      , headers: {
+        token: token
+      }
+    });
+    return false
+  }
+
+  function add() {
+    let result = {}
+    layui.use('layer', function () {
+      let layer = layui.layer;
+      layer.open({
+        type: 1,
+        title: "添加图书",
+        content: $("#editOrAdd"),
+        area: ['300px', '400px'],
+        btn: ['确定'],
+        yes: function (index, layero) {
+          result = toAdd()
+          //do something
+          layer.close(index); //如果设定了yes回调，需进行手工关闭
+          $('#editOrAdd').attr("style", "display:none;text-align: center")
+        },
+        cancel: function (index, layero) {
+          layer.close(index)
+          $('#editOrAdd').attr("style", "display:none;text-align: center")
+          return false;
+        }
+      })
+    });
+    $('#editOrAdd input[name=book_tag]').val('')
+    $('#editOrAdd input[name=book_author]').val('')
+    $('#editOrAdd input[name=book_name]').val('')
+    form.render(null, 'editOrAdd')
+    return result
+  }
+
+  function update(type, obj) {
+    let result = {}
+    layui.use('layer', function () {
+      let layer = layui.layer;
+      layer.open({
+        type: 1,
+        title: "修改图书信息",
+        content: $("#editOrAdd"),
+        area: ['300px', '400px'],
+        btn: ['确定'],
+        yes: function (index, layero) {
+          result = toUpdate(obj.data.bookId)
+          //do something
+          layer.close(index); //如果设定了yes回调，需进行手工关闭
+          $('#editOrAdd').attr("style", "display:none;text-align: center")
+          obj.update(result)
+        },
+        cancel: function (index, layero) {
+          layer.close(index)
+          $('#editOrAdd').attr("style", "display:none;text-align: center")
+          return false;
+        }
+      })
+    });
+
+    $('#editOrAdd input[name=book_tag]').val(obj.data.bookTag)
+    $('#editOrAdd input[name=book_author]').val(obj.data.bookAuthor)
+    $('#editOrAdd input[name=book_name]').val(obj.data.bookName)
+    form.render()
+    return result
+  }
+
+  function base(url, callback, token,bookId) {
+    const book_tag = $('#editOrAdd input[name=book_tag]').val()
+    const book_name = $('#editOrAdd input[name=book_name]').val()
+    const book_author = $('#editOrAdd input[name=book_author]').val()
+    const book_publish_time = $('#editOrAdd input[name=book_publish_time]').val()
+    const book_bar_path = $('#book_bar_path').val()
+    const data = {
+      "bookTag":book_tag,
+      "bookAuthor": book_author,
+      "bookName": book_name,
+      "bookPublishTime": book_publish_time,
+      "bookBarPath": book_bar_path,
+      "bookContent": ''
+    }
+
+    ajaxPost(url, data, token, callback)
+    return data
+  }
+
+  function toUpdate(bookId) {
+    let callback = function (result) {
+    }
+    return base('/book/update', callback, token,bookId)
+  }
+
+  function toAdd() {
+    let callback = function (result) {
+
+    }
+    return base('/book/add', callback, token,null)
+  }
+
+  function del(book_id) {
+
+    let callback = function (result) {
+
+    }
+    ajaxGet('/book/delete',{'bookId':book_id},token,callback)
+  }
+
+  layui.use(['form(editOrAdd)', 'jquery'], function () {
+    let $ = layui.jquery;
+    let form = layui.form();
+    form.verify({
+      regPwd: function (value) {
+        //获取密码
+        const pwd = $("#book_pssword").val();
+        if (!new RegExp(pwd).test(value)) {
+          return '两次输入的密码不一致';
+        }
+      }
+    });
+  });
+</script>
+
+</html>

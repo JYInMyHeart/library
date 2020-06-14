@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.library.dao.BookDao">
+
+  <resultMap type="com.library.entity.Book" id="BookMap">
+    <result property="bookId" column="book_id" jdbcType="INTEGER"/>
+    <result property="bookName" column="book_name" jdbcType="VARCHAR"/>
+    <result property="bookTag" column="book_tag" jdbcType="VARCHAR"/>
+    <result property="bookAuthor" column="book_author" jdbcType="VARCHAR"/>
+    <result property="bookPublishTime" column="book_publish_time" jdbcType="TIMESTAMP"/>
+    <result property="bookBarPath" column="book_bar_path" jdbcType="VARCHAR"/>
+    <result property="bookContent" column="book_content" jdbcType="VARCHAR"/>
+  </resultMap>
+
+  <!--查询单个-->
+  <select id="queryById" resultMap="BookMap">
+    select
+    book_id, book_name, book_tag, book_author, book_publish_time, book_bar_path, book_content
+    from library.book
+    where book_id = #{bookId}
+  </select>
+
+  <!--查询指定行数据-->
+  <select id="queryAllByLimit" resultMap="BookMap">
+    select
+    book_id, book_name, book_tag, book_author, book_publish_time, book_bar_path, book_content
+    from library.book
+    limit #{offset}, #{limit}
+  </select>
+
+  <!--通过实体作为筛选条件查询-->
+  <select id="queryAll" resultMap="BookMap">
+    select
+    book_id, book_name, book_tag, book_author, book_publish_time, book_bar_path, book_content
+    from library.book
+    <where>
+      <if test="bookId != null">
+        and book_id = #{bookId}
+      </if>
+      <if test="bookName != null and bookName != ''">
+        and book_name = #{bookName}
+      </if>
+      <if test="bookTag != null and bookTag != ''">
+        and book_tag = #{bookTag}
+      </if>
+      <if test="bookAuthor != null and bookAuthor != ''">
+        and book_author = #{bookAuthor}
+      </if>
+      <if test="bookPublishTime != null">
+        and book_publish_time = #{bookPublishTime}
+      </if>
+      <if test="bookBarPath != null and bookBarPath != ''">
+        and book_bar_path = #{bookBarPath}
+      </if>
+      <if test="bookContent != null and bookContent != ''">
+        and book_content = #{bookContent}
+      </if>
+    </where>
+  </select>
+
+  <!--新增所有列-->
+  <insert id="insert" keyProperty="bookId" useGeneratedKeys="true">
+    insert into library.book(book_name, book_tag, book_author, book_publish_time, book_bar_path, book_content)
+    values (#{bookName}, #{bookTag}, #{bookAuthor}, #{bookPublishTime}, #{bookBarPath}, #{bookContent})
+  </insert>
+
+  <!--通过主键修改数据-->
+  <update id="update">
+    update library.book
+    <set>
+      <if test="bookName != null and bookName != ''">
+        book_name = #{bookName},
+      </if>
+      <if test="bookTag != null and bookTag != ''">
+        book_tag = #{bookTag},
+      </if>
+      <if test="bookAuthor != null and bookAuthor != ''">
+        book_author = #{bookAuthor},
+      </if>
+      <if test="bookPublishTime != null">
+        book_publish_time = #{bookPublishTime},
+      </if>
+      <if test="bookBarPath != null and bookBarPath != ''">
+        book_bar_path = #{bookBarPath},
+      </if>
+      <if test="bookContent != null and bookContent != ''">
+        book_content = #{bookContent},
+      </if>
+    </set>
+    where book_id = #{bookId}
+  </update>
+
+  <!--通过主键删除-->
+  <delete id="deleteById">
+    delete from library.book where book_id
+    in
+    <foreach item='item' index='index' collection='bookIds' open='(' separator=',' close=')'>
+      #{item}
+    </foreach>
+  </delete>
+
+
+  <select id="selectByPage" parameterType="Map" resultMap="BookMap">
+    select *
+    from book
+    where 1 = 1
+    <if test="keyword != null and keyword != ''">
+      and (book_name like concat('%',#{keyword},'%')
+      or book_author like concat('%',#{keyword},'%')
+      or book_tag like concat('%',#{keyword},'%'))
+    </if>
+    <if test="PageSort!=null and PageAsc!=null and PageSort != ''">
+      ORDER BY #{PageSort} #{PageAsc}
+    </if>
+    <if test="PageStart!=null and PageSize!=null">
+      limit #{PageStart},#{PageSize}
+    </if>
+  </select>
+
+
+  <select id="count" parameterType="Map" resultType="int">
+    select count(book_id)
+    from book
+    where 1 = 1
+    <if test="keyword != null and keyword != ''">
+      and (book_name like concat('%',#{keyword},'%')
+      or book_author like concat('%',#{keyword},'%')
+      or book_tag like concat('%',#{keyword},'%'))
+    </if>
+  </select>
+
+  <insert id="insertList" keyProperty="bookId" useGeneratedKeys="true">
+    insert into library.book(book_name, book_tag, book_author, book_publish_time, book_bar_path) values
+    <foreach item='item' index='index' collection='list' open='(' separator=',' close=')'>
+      #{item.bookName,jdbcType=VARCHAR},
+      #{item.bookTag,jdbcType=VARCHAR},
+      #{item.bookAuthor,jdbcType=VARCHAR},
+      #{item.bookPublishTime,jdbcType=TIMESTAMP},
+      #{item.bookBarPath,jdbcType=VARCHAR}
+    </foreach>
+  </insert>
+</mapper>

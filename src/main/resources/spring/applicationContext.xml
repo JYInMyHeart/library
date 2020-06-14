@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:mvc="http://www.springframework.org/schema/mvc"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+         http://www.springframework.org/schema/beans/spring-beans-4.3.xsd
+         http://www.springframework.org/schema/context
+         http://www.springframework.org/schema/context/spring-context-4.3.xsd
+         http://www.springframework.org/schema/mvc
+         http://www.springframework.org/schema/mvc/spring-mvc-4.3.xsd">
+
+
+
+  <!-- ①：对com.springmvc包中的所有类进行扫描，以完成Bean创建和自动依赖注入的功能 -->
+  <context:component-scan base-package="com.library"/>
+  <mvc:annotation-driven/>
+  <mvc:resources location="/static/" mapping="/static/**"/>
+  <mvc:resources location="/view/" mapping="/view/**"/>
+
+  <!-- ②：启动Spring MVC的注解功能，完成请求和注解POJO的映射 -->
+  <bean id="stringConverter"
+        class="org.springframework.http.converter.StringHttpMessageConverter">
+    <property name="supportedMediaTypes">
+      <list>
+        <value>text/plain;charset=utf-8</value>
+        <value>text/html;charset=utf-8</value>
+        <value>text/json;charset=utf-8</value>
+        <value>application/json;charset=utf-8</value>
+      </list>
+    </property>
+  </bean>
+
+
+  <bean id="jsonConverter"
+        class="org.springframework.http.converter.json.MappingJackson2HttpMessageConverter">
+    <property name="supportedMediaTypes">
+      <list>
+        <value>application/json;charset=UTF-8</value>
+        <value>application/json-rpc</value>
+      </list>
+    </property>
+  </bean>
+  <bean class="org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter">
+    <property name="messageConverters">
+      <list>
+        <ref bean="stringConverter"/>
+        <ref bean="jsonConverter"/>
+      </list>
+    </property>
+  </bean>
+
+
+  <!-- 配置会话工厂SqlSessionFactory -->
+
+  <bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+    <!-- 数据源 -->
+    <property name="dataSource" ref="dataSource"/>
+    <property name="mapperLocations" value="classpath:mapper/*.xml"/>
+    <property name="typeAliasesPackage" value="com.library.entity"/>
+
+  </bean>
+
+  <!-- 在spring容器中配置mapper的扫描器产生的动态代理对象在spring的容器中自动注册，bean的id就是mapper类名（首字母小写）-->
+  <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+    <!-- 指定扫描包的路径，就是mapper接口的路径，多个包中间以 半角逗号隔开   -->
+    <property name="basePackage" value="com.library.dao"/>
+    <property name="sqlSessionFactoryBeanName" value="sqlSessionFactory"/>
+  </bean>
+
+
+
+  <!-- 数据库连接池 -->
+  <bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource" destroy-method="close">
+    <property name="url" value="jdbc:mysql://localhost:3306/library?useUnicode=true&amp;characterEncoding=utf-8&amp;serverTimezone=UTC&amp;useSSL=false"/>
+    <property name="driverClassName" value="com.mysql.jdbc.Driver"/>
+    <property name="username" value="root"/>
+    <property name="password" value="admin"/>
+  </bean>
+
+  <bean id="multipartResolver" class="org.springframework.web.multipart.commons.CommonsMultipartResolver">
+    <property name="defaultEncoding" value="utf-8"/>
+    <property name="maxUploadSize" value="#{1024*1024}"/>
+  </bean>
+
+
+  <!-- 拦截器 -->
+  <mvc:interceptors>
+    <mvc:interceptor>
+      <mvc:mapping path="/**"/>
+      <mvc:exclude-mapping path="/user/login"/>
+      <mvc:exclude-mapping path="/user/add"/>
+      <mvc:exclude-mapping path="/static/**"/>
+      <mvc:exclude-mapping path="/view/**"/>
+      <mvc:exclude-mapping path="/swagger-ui.html/**"/>
+      <mvc:exclude-mapping path="/swagger-resources/**"/>
+      <mvc:exclude-mapping path="/v2/**"/>
+      <mvc:exclude-mapping path="/webjars/**"/>
+      <bean class="com.library.interceptor.LoginInterceptor"/>
+    </mvc:interceptor>
+  </mvc:interceptors>
+
+  <mvc:resources mapping="swagger-ui.html" location="classpath:/META-INF/resources/" />
+  <mvc:resources mapping="/webjars/**/*" location="classpath:/META-INF/resources/webjars/" />
+
+</beans>

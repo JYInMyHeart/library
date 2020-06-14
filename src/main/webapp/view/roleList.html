@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>角色列表</title>
+  <script src="/static/js/jquery-3.3.1.min.js"></script>
+  <script src="/static/layui/layui.all.js"></script>
+  <script src="/static/js/ajax.js"></script>
+  <script src="/static/js/bootstrap.js"></script>
+  <script type='text/javascript' src='/static/js/axios-0.18.0.js'></script>
+  <script type='text/javascript' src='/static/js/qs.js'></script>
+  <link rel="stylesheet" href="/static/layui/css/layui.css"/>
+  <link rel="stylesheet" href="/static/css/bootstrap.min.css"/>
+</head>
+<body>
+<div class="container" style="width: 90%;">
+  <br/>
+  <br/>
+
+  <fieldset class="layui-elem-field layui-field-title">
+    <legend style="margin-left: 20px;padding: 0 10px;text-align: left;width: 170px;border-bottom: none;">
+      <strong>角色列表</strong></legend>
+  </fieldset>
+  <br/>
+  <h5 style="margin-top: -20px;">
+    <i class="fa fa-paper-plane-o fa-fw" style="color: #299A74"></i>
+    <span style="color: #299A74;"><strong>输入查询信息</strong></span>
+  </h5>
+  <hr style="margin-top: 0;"/>
+  <div class="form table">
+    <div>
+      <div class="layui-form-item">
+        <label class="layui-form-label" style="margin-left: -10px;padding-left:0;"><strong>角色名称</strong></label>
+        <div class="layui-input-inline">
+          <input id="role_name" placeholder="请输入角色名称查询" class="layui-input" type="text">
+        </div>
+        <div class="layui-input-inline" style="margin-left: 50px;">
+          <button class="layui-btn" onclick="queryRole()">查询</button>
+          <button class="layui-btn" onclick="add()">添加</button>
+        </div>
+        <div class="layui-input-inline">
+          <button class="layui-btn" onclick="function exportData() {
+            table.exportFile('test',table.data,'xls')
+          }
+          exportData()">导出
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <h5>
+    <i class="fa fa-paper-plane-o fa-fw" style="color: #299A74"></i>
+    <span style="color: #299A74;"><strong>查询结果展示</strong></span>
+  </h5>
+
+
+  <br/>
+  <br/>
+  <div class="table-responsive">
+    <table class="layui-hide" id="test" lay-filter="test"></table>
+  </div>
+
+
+  <div class="layui-form" lay-filter="permissionTree" style="margin-top:20px;display:none;text-align: center"
+       id="permissionTreeParent">
+    <div class="layui-form-item">
+      <div id="permissionTree" class="demo-tree-more"></div>
+    </div>
+    <div class="layui-form-item">
+      <div class="layui-btn-container">
+        <button type="button" class="layui-btn layui-btn-sm" lay-demo="reload">重置</button>
+      </div>
+    </div>
+  </div>
+
+
+  <form class="layui-form" lay-filter="editOrAdd" action=""
+        style="margin-top:20px;display:none;"
+        id="editOrAdd">
+    <div class="layui-form-item">
+      <label class="layui-form-label">名称</label>
+      <div class="layui-input-block">
+        <input type="text" name="role_name" required lay-verify="required"
+               autocomplete="off" placeholder="请输入角色名称" class="layui-input">
+      </div>
+    </div>
+  </form>
+</div>
+
+
+</body>
+<script type="text/html" id="toolbarDemo">
+  <div class="layui-btn-container">
+    <button class="layui-btn layui-btn-sm" lay-event="delete">删除</button>
+    <button class="layui-btn layui-btn-sm" lay-event="update">编辑</button>
+    <button class="layui-btn layui-btn-sm" lay-event="permission">授权</button>
+  </div>
+</script>
+<script type="text/javascript">
+  const token = window.sessionStorage.getItem('token')
+  var tree
+  var layer
+  var util
+  var element
+  layui.use(['tree', 'util', 'element'], function () {
+    tree = layui.tree
+    layer = layui.layer
+    util = layui.util
+    element = layui.element
+  });
+  let table = {}
+  let form = {}
+  layui.use('form', function () {
+    form = layui.form; //只有执行了这一步，部分表单元素才会自动修饰成功
+  });
+  form.render(null, 'editOrAdd')
+  form.render(null, 'permissionTreeParent')
+  layui.use('table', function () {
+    table = layui.table;
+    table.render({
+      elem: '#test'
+      , method: 'get'
+      , headers: {
+        token: token
+      }
+      , url: basePath + '/role/list'
+      , cols: [[
+        {type:'checkbox'},
+        {field: 'roleId', width: '20%', title: 'ID', sort: true}
+        , {field: 'roleName', width: '20%', title: '角色名称'}
+        , {fixed: 'right', width: '60%', align: 'center', toolbar: '#toolbarDemo'}
+      ]]
+      , parseData: function (res) { //res 即为原始返回的数据
+        return {
+          "code": res.code, //解析接口状态
+          "msg": res.msg, //解析提示文本
+          "count": res.count, //解析数据长度
+          "data": res.data.records //解析数据列表
+        };
+      },
+      page:true
+    });
+  });
+
+  table.on('tool(test)', function (obj) { //注：tool 是工具条事件名，test 是 table 原始容器的属性 lay-filter="对应的值"
+    let data = obj.data; //获得当前行数据
+    let layEvent = obj.event; //获得 lay-event 对应的值（也可以是表头的 event 参数对应的值）
+
+    if (layEvent === 'permission') { //添加
+      permission(obj.data.roleId)
+    } else if (layEvent === 'delete') { //删除
+      const noList = new Array();
+      const checkStatus = table.checkStatus('test')
+      for (const i of checkStatus.data) {
+        noList.push(i.roleId)
+      }
+      layer.confirm('确定删除该角色么', function (index) {
+        //删除对应行（tr）的DOM结构，并更新缓存
+        layer.close(index);
+        del(noList.join(","))
+      });
+    } else if (layEvent === 'update') { //编辑
+      //do something
+      let result = update("修改", obj)
+      //同步更新缓存对应的值
+      obj.update(result);
+    }
+  });
+
+  function queryRole() {
+    let roleName = $('#role_name').val()
+
+    table.reload('test', {
+      elem: '#test'
+      , method: 'get'
+      , url: basePath + '/role/list?keyword=' + roleName
+    });
+  }
+
+  function permission(roleId) {
+    const callback = function (res) {
+      generateTree(res.data.records, roleId)
+    }
+    ajaxGet('/permission/list', null, token, callback)
+    layui.use('layer', function () {
+      let layer = layui.layer;
+      layer.open({
+        type: 1,
+        title: "授权",
+        content: $("#permissionTreeParent"),
+        area: ['300px', '300px'],
+        btn: ['确定'],
+        yes: function (index, layero) {
+          toPermission(roleId)
+          //do something
+          layer.close(index); //如果设定了yes回调，需进行手工关闭
+          $('#permissionTreeParent').attr("style", "display:none;text-align: center")
+        },
+        cancel: function (index, layero) {
+          layer.close(index)
+          $('#permissionTreeParent').attr("style", "display:none;text-align: center")
+          return false;
+        }
+      })
+    });
+    $('#editOrAdd input[name=role_name]').val('')
+    form.render(null, 'editOrAdd')
+  }
+
+  function toPermission(roleId) {
+    const checkData = tree.getChecked('demoId1');
+    const callback = function (res) {
+
+    }
+    const permissionIdList = []
+
+    function scanPermissionId(checkData) {
+      if (checkData == null) return
+      for (const p of checkData) {
+        permissionIdList.push(p.id)
+        scanPermissionId(p.children)
+      }
+    }
+
+    scanPermissionId(checkData)
+
+    const data = []
+    for (const pId of permissionIdList) {
+      const temp = {
+        roleId: roleId,
+        permissionId: pId
+      }
+      data.push(temp)
+    }
+    ajaxPost('/rolePermission/add', data, token, callback)
+  }
+
+  function add() {
+    let result = {}
+    layui.use('layer', function () {
+      let layer = layui.layer;
+      layer.open({
+        type: 1,
+        title: "添加角色",
+        content: $("#editOrAdd"),
+        area: ['300px', '400px'],
+        btn: ['确定'],
+        yes: function (index, layero) {
+          result = toAdd()
+          //do something
+          layer.close(index); //如果设定了yes回调，需进行手工关闭
+          $('#editOrAdd').attr("style", "display:none;text-align: center")
+        },
+        cancel: function (index, layero) {
+          layer.close(index)
+          $('#editOrAdd').attr("style", "display:none;text-align: center")
+          return false;
+        }
+      })
+    });
+    $('#editOrAdd input[name=role_name]').val('')
+    form.render(null, 'editOrAdd')
+    return result
+  }
+
+  function update(obj) {
+    let result = {}
+    layui.use('layer', function () {
+      let layer = layui.layer;
+      layer.open({
+        type: 1,
+        title: "修改角色信息",
+        area: ['100px', '150px'],
+        content: $("#editOrAdd"),
+        btn: ['确定'],
+        yes: function (index, layero) {
+          result = toUpdate(obj.data.roleId)
+          //do something
+          layer.close(index); //如果设定了yes回调，需进行手工关闭
+          $('#editOrAdd').attr("style", "display:none;")
+          obj.update(result)
+        },
+        cancel: function (index, layero) {
+          layer.close(index)
+          $('#editOrAdd').attr("style", "display:none;")
+          return false;
+        }
+      })
+    });
+    form.render(null, 'editOrAdd')
+    return result
+  }
+
+
+  function setChecked(permissionData, roleId, checked) {
+    const data = []
+    for (const p of permissionData) {
+      if (p.permissionLevel === 1) {
+        data.push(
+          {
+            'id': p.permissionId,
+            'title': p.permissionName,
+            'checked': checked.includes(p.permissionId),
+            'children': []
+          }
+        )
+      }
+    }
+    for (const p of permissionData) {
+      if (p.permissionLevel === 2) {
+        for (const d of data) {
+          if (d.id === p.permissionParent) {
+            d.children.push({
+              'id': p.permissionId,
+              'title': p.permissionName,
+              'checked': checked.includes(p.permissionId)
+            })
+          }
+        }
+      }
+    }
+
+
+    tree.render({
+      elem: '#permissionTree'
+      , data: data
+      , showCheckbox: true  //是否显示复选框
+      , id: 'demoId1'
+      , click: function (obj) {
+        var data = obj.data;  //获取当前点击的节点数据
+        layer.msg('状态：' + obj.state + '<br>节点数据：' + JSON.stringify(data));
+      }
+    });
+
+    //按钮事件
+    util.event('lay-demo', {
+      getChecked: function (othis) {
+        var checkedData = tree.getChecked('demoId1'); //获取选中节点的数据
+
+        layer.alert(JSON.stringify(checkedData), {shade: 0});
+        console.log(checkedData);
+      }
+      , reload: function () {
+        //重载实例
+        tree.reload('demoId1', {});
+
+      }
+    });
+  }
+
+
+  function generateTree(permissionData, roleId) {
+    const checked = []
+    const param = Qs.stringify({'roleId': roleId})
+    axios.get(basePath + '/role/listByRoleId?' + param, {
+      headers: {
+        'token': token
+      }
+    }).then((res) => {
+      for (const p of res.data.data.records) {
+        checked.push(p.permissionId)
+      }
+      setChecked(permissionData, roleId, checked)
+    })
+  }
+
+  function base(url, callback, id) {
+    let role_name = $('#editOrAdd input[name=role_name]').val()
+    let data = {
+      "roleId": id,
+      "roleName": role_name,
+    }
+
+    ajaxPost(url, data, token, callback)
+    return data
+  }
+
+  function toUpdate(id) {
+
+    let callback = function (result) {
+
+    }
+    return base('/role/update', callback, id)
+  }
+
+  function toAdd() {
+    let callback = function (result) {
+
+    }
+    return base('/role/add', callback)
+
+  }
+
+  function del(list) {
+    let callback = function (result) {
+      layer.msg('删除成功')
+    }
+    ajaxGet('/role/delete', {roleId: list}, token, callback)
+  }
+
+</script>
+</html>

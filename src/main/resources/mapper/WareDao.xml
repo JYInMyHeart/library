@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.library.dao.WareDao">
+
+    <resultMap type="com.library.entity.Ware" id="WareMap">
+        <result property="wareId" column="ware_id" jdbcType="INTEGER"/>
+        <result property="wareCount" column="ware_count" jdbcType="INTEGER"/>
+        <result property="wareTotal" column="ware_total" jdbcType="INTEGER"/>
+        <result property="bookId" column="book_id" jdbcType="INTEGER"/>
+    </resultMap>
+
+    <resultMap type="com.library.entity.WareVo" id="WareVoMap">
+        <result property="wareId" column="ware_id" jdbcType="INTEGER"/>
+        <result property="wareCount" column="ware_count" jdbcType="INTEGER"/>
+        <result property="wareTotal" column="ware_total" jdbcType="INTEGER"/>
+        <result property="bookId" column="book_id" jdbcType="INTEGER"/>
+        <result property="bookName" column="book_name" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <!--查询单个-->
+    <select id="queryById" resultMap="WareMap">
+        select
+          ware_id, ware_count, ware_total, book_id
+        from library.ware
+        where ware_id = #{wareId}
+    </select>
+
+    <!--查询指定行数据-->
+    <select id="queryAllByLimit" resultMap="WareMap">
+        select
+          ware_id, ware_count, ware_total, book_id
+        from library.ware
+        limit #{offset}, #{limit}
+    </select>
+
+    <!--通过实体作为筛选条件查询-->
+    <select id="queryAll" resultMap="WareMap">
+        select
+          ware_id, ware_count, ware_total, book_id
+        from library.ware
+        <where>
+            <if test="wareId != null">
+                and ware_id = #{wareId}
+            </if>
+            <if test="wareCount != null">
+                and ware_count = #{wareCount}
+            </if>
+            <if test="wareTotal != null">
+                and ware_total = #{wareTotal}
+            </if>
+            <if test="bookId != null">
+                and book_id = #{bookId}
+            </if>
+        </where>
+    </select>
+
+    <!--新增所有列-->
+    <insert id="insert" keyProperty="wareId" useGeneratedKeys="true">
+        insert into library.ware(ware_count, ware_total, book_id)
+        values (#{wareCount}, #{wareTotal}, #{bookId})
+    </insert>
+
+    <!--通过主键修改数据-->
+    <update id="update">
+        update library.ware
+        <set>
+            <if test="wareCount != null">
+                ware_count = #{wareCount},
+            </if>
+            <if test="wareTotal != null">
+                ware_total = #{wareTotal},
+            </if>
+            <if test="bookId != null">
+                book_id = #{bookId},
+            </if>
+        </set>
+        where ware_id = #{wareId}
+    </update>
+
+    <!--通过主键删除-->
+    <delete id="deleteById">
+        delete from library.ware where ware_id
+        in
+        <foreach item='item' index='index' collection='wareIds' open='(' separator=',' close=')'>
+            #{item}
+        </foreach>
+    </delete>
+
+    <select id="selectByPage" parameterType="Map" resultMap="WareVoMap">
+        select w.*,b.book_name
+        from ware w
+        left join book b on w.book_id = b.book_id
+        where 1 = 1
+        <if test="keyword != null and keyword != ''">
+            and b.book_name like concat('%',#{keyword},'%')
+        </if>
+        <if test="PageSort!=null and PageAsc!=null and PageSort != ''">
+            ORDER BY #{PageSort} #{PageAsc}
+        </if>
+        <if test="PageStart!=null and PageSize!=null">
+            limit #{PageStart},#{PageSize}
+        </if>
+    </select>
+
+
+    <select id="count" parameterType="Map" resultType="int">
+        select count(w.ware_id)
+        from ware w
+        left join book b on w.book_id = b.book_id
+        where 1 = 1
+        <if test="keyword != null and keyword != ''">
+            and b.book_name like concat('%',#{keyword},'%')
+        </if>
+    </select>
+
+    <select id="queryByBookId" resultMap="WareMap">
+        select * from ware where book_id = #{bookId}
+    </select>
+</mapper>

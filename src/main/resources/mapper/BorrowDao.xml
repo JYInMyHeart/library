@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.library.dao.BorrowDao">
+
+    <resultMap type="com.library.entity.Borrow" id="BorrowMap">
+        <result property="borrowId" column="borrow_id" jdbcType="INTEGER"/>
+        <result property="borrowStartTime" column="borrow_start_time" jdbcType="TIMESTAMP"/>
+        <result property="userId" column="user_id" jdbcType="INTEGER"/>
+        <result property="bookId" column="book_id" jdbcType="INTEGER"/>
+        <result property="bookCount" column="book_count" jdbcType="INTEGER"/>
+        <result property="borrowTime" column="borrow_time" jdbcType="TIMESTAMP"/>
+    </resultMap>
+    <resultMap type="com.library.entity.BorrowVo" id="BorrowVoMap">
+        <result property="borrowId" column="borrow_id" jdbcType="INTEGER"/>
+        <result property="borrowStartTime" column="borrow_start_time" jdbcType="TIMESTAMP"/>
+        <result property="userId" column="user_id" jdbcType="INTEGER"/>
+        <result property="bookId" column="book_id" jdbcType="INTEGER"/>
+        <result property="bookCount" column="book_count" jdbcType="INTEGER"/>
+        <result property="borrowTime" column="borrow_time" jdbcType="TIMESTAMP"/>
+        <result property="bookName" column="book_name" jdbcType="VARCHAR"/>
+        <result property="bookTag" column="book_tag" jdbcType="VARCHAR"/>
+        <result property="bookAuthor" column="book_author" jdbcType="VARCHAR"/>
+        <result property="bookPublishTime" column="book_publish_time" jdbcType="TIMESTAMP"/>
+        <result property="bookBarPath" column="book_bar_path" jdbcType="VARCHAR"/>
+        <result property="bookContent" column="book_content" jdbcType="VARCHAR"/>
+        <result property="userName" column="user_name" jdbcType="VARCHAR"/>
+        <result property="wareCount" column="ware_count" jdbcType="INTEGER"/>
+        <result property="wareTotal" column="ware_total" jdbcType="INTEGER"/>
+    </resultMap>
+
+    <!--查询单个-->
+    <select id="queryById" resultMap="BorrowMap">
+        select
+          borrow_id, borrow_start_time, user_id, book_id, book_count, borrow_time
+        from library.borrow
+        where borrow_id = #{borrowId}
+    </select>
+
+    <!--查询指定行数据-->
+    <select id="queryAllByLimit" resultMap="BorrowMap">
+        select
+          borrow_id, borrow_start_time, user_id, book_id, book_count, borrow_time
+        from library.borrow
+        limit #{offset}, #{limit}
+    </select>
+
+    <!--通过实体作为筛选条件查询-->
+    <select id="queryAll" resultMap="BorrowMap">
+        select
+          borrow_id, borrow_start_time, user_id, book_id, book_count, borrow_time
+        from library.borrow
+        <where>
+            <if test="borrowId != null">
+                and borrow_id = #{borrowId}
+            </if>
+            <if test="borrowStartTime != null">
+                and borrow_start_time = #{borrowStartTime}
+            </if>
+            <if test="userId != null">
+                and user_id = #{userId}
+            </if>
+            <if test="bookId != null">
+                and book_id = #{bookId}
+            </if>
+            <if test="bookCount != null">
+                and book_count = #{bookCount}
+            </if>
+            <if test="borrowTime != null">
+                and borrow_time = #{borrowTime}
+            </if>
+        </where>
+    </select>
+
+    <!--新增所有列-->
+    <insert id="insert" keyProperty="borrowId" useGeneratedKeys="true">
+        insert into library.borrow(borrow_start_time, user_id, book_id, book_count, borrow_time)
+        values (#{borrowStartTime}, #{userId}, #{bookId}, #{bookCount}, #{borrowTime})
+    </insert>
+
+    <!--通过主键修改数据-->
+    <update id="update">
+        update library.borrow
+        <set>
+            <if test="borrowStartTime != null">
+                borrow_start_time = #{borrowStartTime},
+            </if>
+            <if test="userId != null">
+                user_id = #{userId},
+            </if>
+            <if test="bookId != null">
+                book_id = #{bookId},
+            </if>
+            <if test="bookCount != null">
+                book_count = #{bookCount},
+            </if>
+            <if test="borrowTime != null">
+                borrow_time = #{borrowTime},
+            </if>
+        </set>
+        where borrow_id = #{borrowId}
+    </update>
+
+    <!--通过主键删除-->
+    <delete id="deleteById">
+        delete from library.borrow where borrow_id
+        in
+        <foreach item='item' index='index' collection='borrowIds' open='(' separator=',' close=')'>
+            #{item}
+        </foreach>
+    </delete>
+
+    <select id="selectByPage" parameterType="Map" resultMap="BorrowVoMap">
+        select *
+        from borrow bo
+        left join user u on bo.user_id = u.user_id
+        left join book b on bo.book_id = b.book_id
+        left join ware w on b.book_id = w.book_id
+        where 1 = 1
+        <if test="keyword != null and keyword != ''">
+            and (u.user_name like concat('%',#{keyword},'%') or b.book_name like concat('%',#{keyword},'%'))
+        </if>
+        <if test="PageSort!=null and PageAsc!=null and PageSort != ''">
+            ORDER BY #{PageSort} #{PageAsc}
+        </if>
+        <if test="PageStart!=null and PageSize!=null">
+            limit #{PageStart},#{PageSize}
+        </if>
+    </select>
+
+
+    <select id="count" parameterType="Map" resultType="int">
+        select count(bo.borrow_id)
+        from borrow bo
+        left join user u on bo.user_id = u.user_id
+        left join book b on bo.book_id = b.book_id
+        left join ware w on b.book_id = w.book_id
+        where 1 = 1
+        <if test="keyword != null and keyword != ''">
+            and (u.user_name like concat('%',#{keyword},'%') or b.book_name like concat('%',#{keyword},'%'))
+        </if>
+    </select>
+
+</mapper>

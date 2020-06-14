@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>库存列表</title>
+  <link rel="stylesheet" href="../static/layui/css/layui.css"/>
+  <link rel="stylesheet" href="../static/css/bootstrap.min.css"/>
+</head>
+<body>
+<div class="container" style="width: 90%;">
+  <br/>
+  <br/>
+
+  <fieldset class="layui-elem-field layui-field-title">
+    <legend style="margin-left: 20px;padding: 0 10px;text-align: left;width: 170px;border-bottom: none;">
+      <strong>库存列表</strong></legend>
+  </fieldset>
+  <br/>
+  <h5 style="margin-top: -20px;">
+    <i class="fa fa-paper-plane-o fa-fw" style="color: #299A74"></i>
+    <span style="color: #299A74;"><strong>输入查询信息</strong></span>
+  </h5>
+  <hr style="margin-top: 0;"/>
+  <div class="form table">
+    <div>
+      <div class="layui-form-item">
+        <label class="layui-form-label" style="margin-left: -10px;padding-left:0;"><strong>库存名称</strong></label>
+        <div class="layui-input-inline">
+          <input id="ware_name" placeholder="请输入库存名称查询" class="layui-input" type="text">
+        </div>
+        <div class="layui-input-inline" style="margin-left: 50px;">
+          <button class="layui-btn" onclick="queryWare()">查询</button>
+          <button class="layui-btn" onclick="add()">添加</button>
+        </div>
+        <div class="layui-input-inline">
+          <button class="layui-btn" onclick="function exportData() {
+            table.exportFile('test',table.data,'xls')
+          }
+          exportData()">导出
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <h5>
+    <i class="fa fa-paper-plane-o fa-fw" style="color: #299A74"></i>
+    <span style="color: #299A74;"><strong>查询结果展示</strong></span>
+  </h5>
+
+
+  <br/>
+  <br/>
+  <div class="table-responsive">
+    <table class="layui-hide" id="test" lay-filter="test"></table>
+  </div>
+
+
+  <form class="layui-form" lay-filter="editOrAdd" action=""
+        style="margin-top:20px;display:none;text-align: center"
+        id="editOrAdd">
+    <div class="layui-form-item">
+      <label class="layui-form-label">书名</label>
+      <div class="layui-input-inline">
+        <select id="book_name" name="book_name" lay-verify="" lay-search lay-filter="cartype">
+          <option value=""></option>
+        </select>
+      </div>
+    </div>
+    <div class="layui-form-item">
+      <label class="layui-form-label">库存总数</label>
+      <div class="layui-input-inline">
+        <input type="text" name="ware_total" required lay-verify="required"
+               autocomplete="off"
+               placeholder="请输入库存总数" class="layui-input">
+      </div>
+    </div>
+
+
+    <div class="layui-form-item">
+      <label class="layui-form-label">库存剩余数</label>
+      <div class="layui-input-inline">
+        <input type="text" name="ware_count" id="ware_password" required
+               lay-verify="required"
+               autocomplete="off" placeholder="请输入剩余数" class="layui-input">
+      </div>
+    </div>
+  </form>
+</div>
+
+
+</body>
+<script src="../static/js/jquery-3.3.1.min.js"></script>
+<script src="../static/layui/layui.all.js"></script>
+<script src="../static/js/bootstrap.js"></script>
+<script src="../static/js/ajax.js"></script>
+<script type="text/html" id="toolbarDemo">
+  <div class="layui-btn-container">
+    <button class="layui-btn layui-btn-sm" lay-event="delete">删除</button>
+    <button class="layui-btn layui-btn-sm" lay-event="update">编辑</button>
+  </div>
+</script>
+<script type="text/javascript">
+  const token = window.sessionStorage.getItem('token')
+  var element
+  var laypage
+  layui.use('element', function () {
+    element = layui.element;
+  });
+  layui.use('laypage', function () {
+    laypage = layui.laypage
+  });
+  layui.use('upload', function () {
+    var upload = layui.upload;
+
+    //执行实例
+    var uploadInst = upload.render({
+      elem: '#logo' //绑定元素
+      , url: basePath + '/ware/upload/' //上传接口
+      , headers: {
+        token: token
+      }
+      , accept: 'images'
+      , acceptMime: 'image/*'
+      , auto: true
+      , drag: true
+      , done: function (res) {
+        layer.msg('上传成功');
+        layui.$('#uploadDemoView').removeClass('layui-hide').find('img').attr('src', "data:image/jpg;base64," + res.data.src);
+        $('#ware_logo').val(res.data.src)
+      }
+      , error: function () {
+        layer.msg('网络异常，请稍后重试')
+      }
+    });
+  });
+  let table = {}
+  let form = {}
+  layui.use('form', function () {
+    form = layui.form; //只有执行了这一步，部分表单元素才会自动修饰成功
+  });
+  let callback = function (res) {
+    $('#book_name').empty()
+    let data = res.data.records
+    let options = ' <option value="" name=""></option>'
+    for (const x of data) {
+      options += ' <option value="' + x.bookId + '" name="' + x.bookName + '" >' + x.bookName + '</option>'
+    }
+    $('#book_name').append(options)
+
+  }
+  ajaxGet('/book/list', null, token, callback)
+  form.render()
+
+
+  layui.use('table', function () {
+    table = layui.table;
+    let role = window.sessionStorage.getItem('userRole');
+    let columns = [[
+      {type:'checkbox'},
+      {field: 'wareCount', width: '30%', title: '剩余数'}
+      , {field: 'wareTotal', title: '库存总数', width: '30%'}
+      , {field: 'bookName', title: '书名', width: '30%'}
+
+    ]]
+    if (role !== '1') {
+      columns[0].push(
+        {fixed: 'right', width: '20%', align: 'center', toolbar: '#toolbarDemo', id: 'tool'})
+    }
+    table.render({
+      elem: '#test'
+      , method: 'get'
+      , page: true
+      , headers: {
+        token: token
+      }
+      , url: basePath + '/ware/list'
+      , cols: columns
+      , parseData: function (res) { //res 即为原始返回的数据
+        return {
+          "code": res.code, //解析接口状态
+          "msg": res.msg, //解析提示文本
+          "count": res.count, //解析数据长度
+          "data": res.data.records //解析数据列表
+        };
+      }
+    });
+  });
+
+  table.on('tool(test)', function (obj) { //注：tool 是工具条事件名，test 是 table 原始容器的属性 lay-filter="对应的值"
+    let data = obj.data; //获得当前行数据
+    let layEvent = obj.event; //获得 lay-event 对应的值（也可以是表头的 event 参数对应的值）
+
+    if (layEvent === 'delete') { //删除
+      const noList = new Array();
+      const checkStatus = table.checkStatus('test')
+      for (const i of checkStatus.data) {
+        noList.push(i.wareId)
+      }
+      layer.confirm('确定删除该库存么', function (index) {
+        //删除对应行（tr）的DOM结构，并更新缓存
+        layer.close(index);
+        del(noList.join(","))
+      });
+    } else if (layEvent === 'update') { //编辑
+      let result = update("修改", obj)
+      obj.update(result);
+    }
+  });
+
+  function queryWare() {
+    let warename = $('#ware_name').val()
+
+    table.reload('test', {
+      elem: '#test'
+      , method: 'get'
+      , url: basePath + '/ware/list?keyword=' + warename
+      , headers: {
+        token: token
+      }
+    });
+    return false
+  }
+
+  function add() {
+    let result = {}
+    layui.use('layer', function () {
+      let layer = layui.layer;
+      layer.open({
+        type: 1,
+        title: "添加库存",
+        content: $("#editOrAdd"),
+        area: ['300px', '400px'],
+        btn: ['确定'],
+        yes: function (index, layero) {
+          result = toAdd()
+          //do something
+          layer.close(index); //如果设定了yes回调，需进行手工关闭
+          $('#editOrAdd').attr("style", "display:none;text-align: center")
+        },
+        cancel: function (index, layero) {
+          layer.close(index)
+          $('#editOrAdd').attr("style", "display:none;text-align: center")
+          return false;
+        }
+      })
+    });
+    $('#editOrAdd input[name=ware_count]').val('')
+    $('#editOrAdd input[name=ware_total]').val('')
+    $('#editOrAdd select[name=book_name]').val('');
+    form.render(null, 'editOrAdd')
+    return result
+  }
+
+  function update(type, obj) {
+    let result = {}
+    layui.use('layer', function () {
+      let layer = layui.layer;
+      layer.open({
+        type: 1,
+        title: "修改库存信息",
+        content: $("#editOrAdd"),
+        area: ['300px', '400px'],
+        btn: ['确定'],
+        yes: function (index, layero) {
+          result = toUpdate(obj.data.wareId)
+          //do something
+          layer.close(index); //如果设定了yes回调，需进行手工关闭
+          $('#editOrAdd').attr("style", "display:none;text-align: center")
+          obj.update(result)
+        },
+        cancel: function (index, layero) {
+          layer.close(index)
+          $('#editOrAdd').attr("style", "display:none;text-align: center")
+          return false;
+        }
+      })
+    });
+
+    $('#editOrAdd input[name=ware_count]').val(obj.data.wareCount)
+    $('#editOrAdd input[name=ware_total]').val(obj.data.wareTotal)
+
+    $('#book_name').attr('disabled', 'disabled')
+    $("#book_name").each(function () {
+      // this代表的是<option></option>，对option再进行遍历
+      $(this).children("option").each(function () {
+        // 判断需要对那个选项进行回显
+        if (Number.parseInt(this.value) === obj.data.bookId) {
+          // 进行回显
+          $(this).attr("selected", "selected");
+        }
+      });
+    });
+    form.render('select', 'cartype')
+    form.render()
+    return result
+  }
+
+  function base(url, callback, token, wareId) {
+    const ware_count = $('#editOrAdd input[name=ware_count]').val()
+    const ware_total = $('#editOrAdd input[name=ware_total]').val()
+    const book_name = $('#editOrAdd select[name=book_name] option:selected').val()
+
+    const data = {
+      wareId: wareId,
+      bookId: book_name,
+      wareCount: ware_count,
+      wareTotal: ware_total
+    }
+
+    ajaxPost(url, data, token, callback)
+    return data
+  }
+
+  function toUpdate(wareId) {
+    let callback = function (result) {
+    }
+    return base('/ware/update', callback, token, wareId)
+  }
+
+  function toAdd() {
+    let callback = function (result) {
+
+    }
+    return base('/ware/add', callback, token, null)
+  }
+
+  function del(list) {
+
+    let callback = function (result) {
+
+    }
+    ajaxGet('/ware/delete', {'wareId': list}, token, callback)
+  }
+
+</script>
+
+</html>
