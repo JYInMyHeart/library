@@ -155,8 +155,9 @@
     table = layui.table;
     let role = window.sessionStorage.getItem('userRole');
     let columns = [[
-      {type:'checkbox'},
-      {field: 'wareCount', width: '30%', title: '剩余数'}
+      {type: 'checkbox'},
+      {type: 'numbers', title: '序号', width: '10%'}
+      , {field: 'wareCount', width: '30%', title: '剩余数'}
       , {field: 'wareTotal', title: '库存总数', width: '30%'}
       , {field: 'bookName', title: '书名', width: '30%'}
 
@@ -201,7 +202,7 @@
         del(noList.join(","))
       });
     } else if (layEvent === 'update') { //编辑
-      let result = update("修改", obj)
+      let result = update(obj)
       obj.update(result);
     }
   });

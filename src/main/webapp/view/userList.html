@@ -179,6 +179,7 @@
     let role = window.sessionStorage.getItem('userRole');
     let columns = [[
       {type:'checkbox'},
+      ,{ type: 'numbers', title: '序号', width: '10%'  }
       {field: 'userAccount', width: '20%', title: '账号', sort: true}
       , {field: 'userName', width: '20%', title: '用户名'}
       , {field: 'roleName', title: '角色', width: '20%'}

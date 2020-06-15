@@ -39,7 +39,7 @@
           </button>
         </div>
       </div>
-      <div class="layui-upload layui-form-item">
+      <div class="layui-upload layui-form-item" id="importBook">
         <button type="button" class="layui-btn layui-btn-normal" id="testList">图书导入</button>
         <div class="layui-upload-list">
           <table class="layui-table">
@@ -260,6 +260,7 @@
     let role = window.sessionStorage.getItem('userRole');
     let columns = [[
       {type:'checkbox'}
+      ,{ type: 'numbers', title: '序号', width: '10%'  }
       , {field: 'bookName', width: '10%', title: '图书名'}
       , {field: 'bookTag', width: '10%', title: '分类'}
       , {field: 'bookAuthor', width: '20%', title: '作者'}
@@ -273,9 +274,13 @@
     if (role === '3') {
       columns[0].push(
         { width: '20%', align: 'center', toolbar: '#toolbarDemo1', id: 'tool'})
+      $('#importBook').hide()
+      form.render()
     }else{
       columns[0].push(
         { width: '20%', align: 'center', toolbar: '#toolbarDemo', id: 'tool'})
+      $('#importBook').show()
+      form.render()
     }
     table.render({
       elem: '#test'
@@ -319,11 +324,14 @@
 
   function read(bookId) {
     const callback = function (res){
-      if(res.code === 201){
-        layer.msg('存书不足')
-      }else if(res.code === 200){
-        layer.msg('借阅成功')
-      }
+      layui.use('layer', function () {
+        const layer = layui.layer
+        if (res.code === 201) {
+          layer.msg('存书不足')
+        } else if (res.code === 200) {
+          layer.msg('借阅成功')
+        }
+      })
     }
     const userId = window.sessionStorage.getItem('userId')
     const day2 = new Date()

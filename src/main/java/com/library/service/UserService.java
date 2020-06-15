@@ -6,6 +6,7 @@ import com.library.entity.User;
 import com.library.entity.UserVo;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * (User)表服务接口
@@ -67,4 +68,6 @@ public interface UserService {
     PageBean<UserVo> selectUserByPage(int page, int size, String sort, String asc, String keyword);
 
     List<Permission> getMenu(String userAccount);
+
+    Map<String, Integer> count();
 }

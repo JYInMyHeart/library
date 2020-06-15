@@ -1,6 +1,9 @@
 package com.library.service.impl;
 
+import com.library.dao.BookDao;
+import com.library.dao.BorrowDao;
 import com.library.dao.PermissionDao;
+import com.library.dao.WareDao;
 import com.library.entity.PageBean;
 import com.library.entity.Permission;
 import com.library.entity.User;
@@ -12,7 +15,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
 import javax.annotation.Resource;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * (User)表服务实现类
@@ -24,6 +29,12 @@ import java.util.List;
 public class UserServiceImpl implements UserService {
     @Resource
     private UserDao userDao;
+    @Resource
+    private BookDao bookDao;
+    @Resource
+    private WareDao wareDao;
+    @Resource
+    private BorrowDao borrowDao;
 
     /**
      * 通过ID查询单条数据
@@ -102,5 +113,19 @@ public class UserServiceImpl implements UserService {
     @Override
     public List<Permission> getMenu(String userAccount) {
         return userDao.getMenu(userAccount);
+    }
+
+    @Override
+    public Map<String, Integer> count() {
+        Map<String, Integer> map = new HashMap<>();
+        int userCount = userDao.count(null);
+        int bookCount = bookDao.count(null);
+        int borrowCount = borrowDao.count(null);
+        int wareCount = wareDao.count(null);
+        map.put("userCount",userCount);
+        map.put("bookCount",bookCount);
+        map.put("borrowCount",borrowCount);
+        map.put("wareCount",wareCount);
+        return map;
     }
 }

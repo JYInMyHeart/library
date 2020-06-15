@@ -19,12 +19,15 @@ import javax.annotation.Resource;
 import javax.servlet.http.HttpSession;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -115,13 +118,14 @@ public class UserController {
             return ResponseEntity.ok();
         }
     }
-
+    @ApiOperation("用户菜单")
     @GetMapping(value = "/menu")
     public ResponseEntity menu(@RequestParam String userAccount) {
         List<Permission> menu = userService.getMenu(userAccount);
         return ResponseEntity.data(menu);
     }
 
+    @ApiOperation("用户头像转Base64")
     @PostMapping(value = "/upload")
     public ResponseEntity upload(MultipartFile file) {
         try {
@@ -132,6 +136,16 @@ public class UserController {
             System.err.println(e);
             return ResponseEntity.serverInternalError();
         }
+    }
+
+    @ApiOperation("统计")
+    @GetMapping("/count")
+    @ResponseBody
+    public ResponseEntity count() throws IOException {
+        ResponseEntity responseData;
+        Map<String, Integer> count = userService.count();
+        responseData = ResponseEntity.data(Collections.singletonList(count));
+        return responseData;
     }
 
 }
