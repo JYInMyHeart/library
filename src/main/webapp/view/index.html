@@ -237,7 +237,7 @@
 
   //下面就是判断是否== 的代码，无需解释
   function validate() {
-    const oValue = $('#check').value.toUpperCase();
+    const oValue = $('#check').val().toUpperCase();
     if (oValue === 0) {
       layer.open({
         title: '警告信息',

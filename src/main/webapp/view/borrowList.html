@@ -189,9 +189,9 @@
     table = layui.table;
     let role = window.sessionStorage.getItem('userRole');
     let columns = [[
-      {type: 'checkbox'},
+      {type: 'checkbox'}
       ,{ type: 'numbers', title: '序号', width: '10%'  }
-      {field: 'bookName', width: '20%', title: '书名', sort: true}
+      ,{field: 'bookName', width: '20%', title: '书名', sort: true}
       , {field: 'userName', title: '借阅人', width: '20%'}
       , {field: 'wareCount', title: '可借阅数量', width: '20%'}
       , {field: 'bookCount', title: '借阅数', width: '20%'}

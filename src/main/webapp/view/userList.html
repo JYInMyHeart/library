@@ -28,10 +28,10 @@
           <input id="user_name" placeholder="请输入用户名称查询" class="layui-input" type="text">
         </div>
         <div class="layui-input-inline" style="margin-left: 50px;">
-          <button class="layui-btn" onclick="queryUser()">查询</button>
-          <button class="layui-btn" onclick="add()">添加</button>
+          <button class="layui-btn" onclick="queryUser()" id="permission15">查询</button>
+          <button class="layui-btn" onclick="add()" id="permission16">添加</button>
         </div>
-        <div class="layui-input-inline">
+        <div class="layui-input-inline" id="permission17">
           <button class="layui-btn" onclick="function exportData() {
             table.exportFile('test',table.data,'xls')
           }
@@ -120,8 +120,8 @@
 <script src="../static/js/ajax.js"></script>
 <script type="text/html" id="toolbarDemo">
   <div class="layui-btn-container">
-    <button class="layui-btn layui-btn-sm" lay-event="delete">删除</button>
     <button class="layui-btn layui-btn-sm" lay-event="update">编辑</button>
+    <button class="layui-btn layui-btn-sm" lay-event="delete">删除</button>
   </div>
 </script>
 <script type="text/javascript">
@@ -174,40 +174,61 @@
   }
   ajaxGet('/role/listAll', null, token, callback)
   form.render()
+  const role = window.sessionStorage.getItem('userRole');
+  const permissionArray = []
+
+
   layui.use('table', function () {
     table = layui.table;
-    let role = window.sessionStorage.getItem('userRole');
-    let columns = [[
-      {type:'checkbox'},
-      ,{ type: 'numbers', title: '序号', width: '10%'  }
-      {field: 'userAccount', width: '20%', title: '账号', sort: true}
-      , {field: 'userName', width: '20%', title: '用户名'}
-      , {field: 'roleName', title: '角色', width: '20%'}
-      , {field: 'userPassword', title: '密码', width: '20%'}
 
-    ]]
-    if (role === '1') {
-      columns[0].push(
-        {fixed: 'right', width: '20%', align: 'center', toolbar: '#toolbarDemo', id: 'tool'})
+    const permissionCallback = function (res) {
+      const permissionData = res.data.records
+      for (const p of permissionData) {
+        if(p.permissionLevel === 3){
+          permissionArray.push(p.permissionId)
+        }
+      }
+      let columns = [[
+        {type:'checkbox'},
+        { type: 'numbers', title: '序号', width: '10%'  }
+        ,{field: 'userAccount', width: '20%', title: '账号', sort: true}
+        , {field: 'userName', width: '20%', title: '用户名'}
+        , {field: 'roleName', title: '角色', width: '20%'}
+        , {field: 'userPassword', title: '密码', width: '20%'}
+
+      ]]
+      if (permissionArray.includes(18)) {
+        columns[0].push(
+          {fixed: 'right', width: '20%', align: 'center', toolbar: '#toolbarDemo', id: 'tool'})
+      }
+      for(let i = 15;i < 18;i++){
+        if(permissionArray.includes(i)){
+          $('#permission'+i).show()
+        }else{
+          $('#permission'+i).hide()
+        }
+      }
+      form.render()
+      table.render({
+        elem: '#test'
+        , method: 'get'
+        , page: true
+        , headers: {
+          token: token
+        }
+        , url: basePath + '/user/list'
+        , cols: columns
+        , parseData: function (res) { //res 即为原始返回的数据
+          return {
+            "code": res.code, //解析接口状态
+            "msg": res.msg, //解析提示文本
+            "count": res.count, //解析数据长度
+            "data": res.data.records //解析数据列表
+          };
+        }
+      });
     }
-    table.render({
-      elem: '#test'
-      , method: 'get'
-      , page: true
-      , headers: {
-        token: token
-      }
-      , url: basePath + '/user/list'
-      , cols: columns
-      , parseData: function (res) { //res 即为原始返回的数据
-        return {
-          "code": res.code, //解析接口状态
-          "msg": res.msg, //解析提示文本
-          "count": res.count, //解析数据长度
-          "data": res.data.records //解析数据列表
-        };
-      }
-    });
+    ajaxGet('/role/listByRoleId',{roleId:role},token,permissionCallback)
   });
 
   table.on('tool(test)', function (obj) { //注：tool 是工具条事件名，test 是 table 原始容器的属性 lay-filter="对应的值"

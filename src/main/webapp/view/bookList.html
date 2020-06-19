@@ -39,16 +39,18 @@
           </button>
         </div>
       </div>
-      <div class="layui-upload layui-form-item" id="importBook">
+      <div class="layui-upload layui-form-item" id="permission32">
         <button type="button" class="layui-btn layui-btn-normal" id="testList">图书导入</button>
         <div class="layui-upload-list">
           <table class="layui-table">
             <thead>
-            <tr><th>文件名</th>
+            <tr>
+              <th>文件名</th>
               <th>大小</th>
               <th>状态</th>
               <th>操作</th>
-            </tr></thead>
+            </tr>
+            </thead>
             <tbody id="demoList"></tbody>
           </table>
         </div>
@@ -112,14 +114,14 @@
           <hr>
           <img src="" alt="上传成功后渲染" style="max-width: 196px">
         </div>
-        <input  hidden id="book_bar_path"/>
+        <input hidden id="book_bar_path"/>
       </div>
     </div>
   </form>
 </div>
 <style>
-  .layui-table-cell{
-    height:auto !important;
+  .layui-table-cell {
+    height: auto !important;
   }
 </style>
 
@@ -140,7 +142,7 @@
   </div>
 </script>
 <script type="text/html" id="imgTpl">
-  <img src="data:image/jpg;base64,{{d.bookBarPath}}" />
+  <img src="data:image/jpg;base64,{{d.bookBarPath}}"/>
 </script>
 <script type="text/javascript">
   const token = window.sessionStorage.getItem('token')
@@ -153,10 +155,10 @@
   layui.use('laypage', function () {
     laypage = layui.laypage
   });
-  layui.use('util',function () {
+  layui.use('util', function () {
     util = layui.util
   })
-  layui.use('laydate', function() {
+  layui.use('laydate', function () {
     var laydate = layui.laydate;
 
     //常规用法
@@ -164,7 +166,7 @@
       elem: '#book_publish_time'
     });
   });
-    layui.use('upload', function () {
+  layui.use('upload', function () {
     var upload = layui.upload;
 
     //执行实例
@@ -189,65 +191,65 @@
     });
 
 
-      var demoListView = $('#demoList')
-        ,uploadListIns = upload.render({
-        elem: '#testList'
-        ,url: basePath + '/book/uploadBook' //改成您自己的上传接口
-        ,accept: 'file'
-        ,exts: 'xls|xlsx'
-        ,acceptMime: 'file/xlsx, file/xls'
-        ,multiple: true
-        ,headers:{
-          token:token
-        }
-        ,auto: false
-        ,bindAction: '#testListAction'
-        ,choose: function(obj){
-          var files = this.files = obj.pushFile(); //将每次选择的文件追加到文件队列
-          //读取本地文件
-          obj.preview(function(index, file, result){
-            var tr = $(['<tr id="upload-'+ index +'">'
-              ,'<td>'+ file.name +'</td>'
-              ,'<td>'+ (file.size/1024).toFixed(1) +'kb</td>'
-              ,'<td>等待上传</td>'
-              ,'<td>'
-              ,'<button class="layui-btn layui-btn-xs demo-reload layui-hide">重传</button>'
-              ,'<button class="layui-btn layui-btn-xs layui-btn-danger demo-delete">删除</button>'
-              ,'</td>'
-              ,'</tr>'].join(''));
+    var demoListView = $('#demoList')
+      , uploadListIns = upload.render({
+      elem: '#testList'
+      , url: basePath + '/book/uploadBook' //改成您自己的上传接口
+      , accept: 'file'
+      , exts: 'xls|xlsx'
+      , acceptMime: 'file/xlsx, file/xls'
+      , multiple: true
+      , headers: {
+        token: token
+      }
+      , auto: false
+      , bindAction: '#testListAction'
+      , choose: function (obj) {
+        var files = this.files = obj.pushFile(); //将每次选择的文件追加到文件队列
+        //读取本地文件
+        obj.preview(function (index, file, result) {
+          var tr = $(['<tr id="upload-' + index + '">'
+            , '<td>' + file.name + '</td>'
+            , '<td>' + (file.size / 1024).toFixed(1) + 'kb</td>'
+            , '<td>等待上传</td>'
+            , '<td>'
+            , '<button class="layui-btn layui-btn-xs demo-reload layui-hide">重传</button>'
+            , '<button class="layui-btn layui-btn-xs layui-btn-danger demo-delete">删除</button>'
+            , '</td>'
+            , '</tr>'].join(''));
 
-            //单个重传
-            tr.find('.demo-reload').on('click', function(){
-              obj.upload(index, file);
-            });
-
-            //删除
-            tr.find('.demo-delete').on('click', function(){
-              delete files[index]; //删除对应的文件
-              tr.remove();
-              uploadListIns.config.elem.next()[0].value = ''; //清空 input file 值，以免删除后出现同名文件不可选
-            });
-
-            demoListView.append(tr);
+          //单个重传
+          tr.find('.demo-reload').on('click', function () {
+            obj.upload(index, file);
           });
+
+          //删除
+          tr.find('.demo-delete').on('click', function () {
+            delete files[index]; //删除对应的文件
+            tr.remove();
+            uploadListIns.config.elem.next()[0].value = ''; //清空 input file 值，以免删除后出现同名文件不可选
+          });
+
+          demoListView.append(tr);
+        });
+      }
+      , done: function (res, index, upload) {
+        if (res.code === 0) { //上传成功
+          const tr = demoListView.find('tr#upload-' + index)
+            , tds = tr.children();
+          tds.eq(2).html('<span style="color: #5FB878;">上传成功</span>');
+          tds.eq(3).html(''); //清空操作
+          return delete this.files[index]; //删除文件队列已经上传成功的文件
         }
-        ,done: function(res, index, upload){
-          if(res.code === 0){ //上传成功
-            const tr = demoListView.find('tr#upload-'+ index)
-              ,tds = tr.children();
-            tds.eq(2).html('<span style="color: #5FB878;">上传成功</span>');
-            tds.eq(3).html(''); //清空操作
-            return delete this.files[index]; //删除文件队列已经上传成功的文件
-          }
-          this.error(index, upload);
-        }
-        ,error: function(index, upload){
-          var tr = demoListView.find('tr#upload-'+ index)
-            ,tds = tr.children();
-          tds.eq(2).html('<span style="color: #FF5722;">上传失败</span>');
-          tds.eq(3).find('.demo-reload').removeClass('layui-hide'); //显示重传
-        }
-      });
+        this.error(index, upload);
+      }
+      , error: function (index, upload) {
+        var tr = demoListView.find('tr#upload-' + index)
+          , tds = tr.children();
+        tds.eq(2).html('<span style="color: #FF5722;">上传失败</span>');
+        tds.eq(3).find('.demo-reload').removeClass('layui-hide'); //显示重传
+      }
+    });
   });
   let table = {}
   let form = {}
@@ -257,55 +259,79 @@
   form.render()
   layui.use('table', function () {
     table = layui.table;
-    let role = window.sessionStorage.getItem('userRole');
-    let columns = [[
-      {type:'checkbox'}
-      ,{ type: 'numbers', title: '序号', width: '10%'  }
-      , {field: 'bookName', width: '10%', title: '图书名'}
-      , {field: 'bookTag', width: '10%', title: '分类'}
-      , {field: 'bookAuthor', width: '20%', title: '作者'}
-      , {field: 'bookPublishTime', title: '发布时间', width: '20%',
-        templet: function (d) {
-          return ''+ util.toDateString(d.bookPublishTime,'yyyy-MM-dd')
-        }}
-      , {field: 'bookBarPath', title: '条形码', width: '20%',templet: '#imgTpl', unresize: true}
+    const role = window.sessionStorage.getItem('userRole')
+    const permissionArray = []
+    const permissionCallback = function (res) {
+      const permissionData = res.data.records
+      for (const p of permissionData) {
+        if (p.permissionLevel === 3) {
+          permissionArray.push(p.permissionId)
+        }
+      }
+      let columns = [[
+        {type: 'checkbox'}
+        , {type: 'numbers', title: '序号', width: '10%'}
+        , {field: 'bookName', width: '10%', title: '图书名'}
+        , {field: 'bookTag', width: '10%', title: '分类'}
+        , {field: 'bookAuthor', width: '20%', title: '作者'}
+        , {
+          field: 'bookPublishTime', title: '发布时间', width: '20%',
+          templet: function (d) {
+            return '' + util.toDateString(d.bookPublishTime, 'yyyy-MM-dd')
+          }
+        }
+        , {field: 'bookBarPath', title: '条形码', width: '20%', templet: '#imgTpl', unresize: true}
 
-    ]]
-    if (role === '3') {
-      columns[0].push(
-        { width: '20%', align: 'center', toolbar: '#toolbarDemo1', id: 'tool'})
-      $('#importBook').hide()
-      form.render()
-    }else{
-      columns[0].push(
-        { width: '20%', align: 'center', toolbar: '#toolbarDemo', id: 'tool'})
-      $('#importBook').show()
-      form.render()
+      ]]
+
+
+      function generateColumns(permissionId, buttonId) {
+        if (permissionArray.includes(permissionId)) {
+          columns[0].push(
+            { width: '10%', align: 'center', toolbar: buttonId})
+        }
+      }
+
+      generateColumns(31, '#toolbarDemo')
+      generateColumns(29, '#toolbarDemo1')
+
+      table.render({
+        elem: '#test'
+        , method: 'get'
+        , page: true
+        , headers: {
+          token: token
+        }
+        , url: basePath + '/book/list'
+        , cols: columns
+        , parseData: function (res) { //res 即为原始返回的数据
+          return {
+            "code": res.code, //解析接口状态
+            "msg": res.msg, //解析提示文本
+            "count": res.count, //解析数据长度
+            "data": res.data.records //解析数据列表
+          };
+        }
+      });
+      for (let i = 26; i < 29; i++) {
+        if (permissionArray.includes(i)) {
+          $('#permission' + i).show()
+        } else {
+          $('#permission' + i).hide()
+        }
+      }
+      if (permissionArray.includes(32)) {
+        $('#permission32').show()
+      } else {
+        $('#permission32').hide()
+      }
     }
-    table.render({
-      elem: '#test'
-      , method: 'get'
-      , page: true
-      , headers: {
-        token: token
-      }
-      , url: basePath + '/book/list'
-      , cols: columns
-      , parseData: function (res) { //res 即为原始返回的数据
-        return {
-          "code": res.code, //解析接口状态
-          "msg": res.msg, //解析提示文本
-          "count": res.count, //解析数据长度
-          "data": res.data.records //解析数据列表
-        };
-      }
-    });
+    ajaxGet('/role/listByRoleId', {roleId: role}, token, permissionCallback)
   });
 
   table.on('tool(test)', function (obj) { //注：tool 是工具条事件名，test 是 table 原始容器的属性 lay-filter="对应的值"
     let data = obj.data; //获得当前行数据
     let layEvent = obj.event; //获得 lay-event 对应的值（也可以是表头的 event 参数对应的值）
-
 
 
     if (layEvent === 'delete') { //删除
@@ -317,13 +343,13 @@
     } else if (layEvent === 'update') { //编辑
       let result = update("修改", obj)
       obj.update(result);
-    }else if(layEvent === 'read'){
+    } else if (layEvent === 'read') {
       read(obj.data.bookId)
     }
   });
 
   function read(bookId) {
-    const callback = function (res){
+    const callback = function (res) {
       layui.use('layer', function () {
         const layer = layui.layer
         if (res.code === 201) {
@@ -335,18 +361,19 @@
     }
     const userId = window.sessionStorage.getItem('userId')
     const day2 = new Date()
-    const s2 = util.toDateString(day2.getTime(),'yyyy-MM-dd')
+    const s2 = util.toDateString(day2.getTime(), 'yyyy-MM-dd')
     day2.setMonth(day2.getMonth() + 1)
-    const s3 = util.toDateString (day2.getTime(),'yyyy-MM-dd')
+    const s3 = util.toDateString(day2.getTime(), 'yyyy-MM-dd')
     const data = {
-      userId:userId,
-      bookId:bookId,
-      bookCount:1,
+      userId: userId,
+      bookId: bookId,
+      bookCount: 1,
       borrowStartTime: s2,
       borrowTime: s3
     }
-    ajaxPost('/borrow/add',data,token,callback)
+    ajaxPost('/borrow/add', data, token, callback)
   }
+
   function queryBook() {
     let bookname = $('#book_name').val()
 
@@ -423,14 +450,14 @@
     return result
   }
 
-  function base(url, callback, token,bookId) {
+  function base(url, callback, token, bookId) {
     const book_tag = $('#editOrAdd input[name=book_tag]').val()
     const book_name = $('#editOrAdd input[name=book_name]').val()
     const book_author = $('#editOrAdd input[name=book_author]').val()
     const book_publish_time = $('#editOrAdd input[name=book_publish_time]').val()
     const book_bar_path = $('#book_bar_path').val()
     const data = {
-      "bookTag":book_tag,
+      "bookTag": book_tag,
       "bookAuthor": book_author,
       "bookName": book_name,
       "bookPublishTime": book_publish_time,
@@ -445,14 +472,14 @@
   function toUpdate(bookId) {
     let callback = function (result) {
     }
-    return base('/book/update', callback, token,bookId)
+    return base('/book/update', callback, token, bookId)
   }
 
   function toAdd() {
     let callback = function (result) {
 
     }
-    return base('/book/add', callback, token,null)
+    return base('/book/add', callback, token, null)
   }
 
   function del(book_id) {
@@ -460,7 +487,7 @@
     let callback = function (result) {
 
     }
-    ajaxGet('/book/delete',{'bookId':book_id},token,callback)
+    ajaxGet('/book/delete', {'bookId': book_id}, token, callback)
   }
 
   layui.use(['form(editOrAdd)', 'jquery'], function () {

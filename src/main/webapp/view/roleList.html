@@ -34,10 +34,10 @@
           <input id="role_name" placeholder="请输入角色名称查询" class="layui-input" type="text">
         </div>
         <div class="layui-input-inline" style="margin-left: 50px;">
-          <button class="layui-btn" onclick="queryRole()">查询</button>
-          <button class="layui-btn" onclick="add()">添加</button>
+          <button class="layui-btn" onclick="queryRole()" id="permission20">查询</button>
+          <button class="layui-btn" onclick="add()" id="permission21">添加</button>
         </div>
-        <div class="layui-input-inline">
+        <div class="layui-input-inline" id="permission22">
           <button class="layui-btn" onclick="function exportData() {
             table.exportFile('test',table.data,'xls')
           }
@@ -88,11 +88,19 @@
 
 
 </body>
-<script type="text/html" id="toolbarDemo">
+<script type="text/html" id="toolbarDelete">
   <div class="layui-btn-container">
-    <button class="layui-btn layui-btn-sm" lay-event="delete">删除</button>
-    <button class="layui-btn layui-btn-sm" lay-event="update">编辑</button>
-    <button class="layui-btn layui-btn-sm" lay-event="permission">授权</button>
+    <button class="layui-btn layui-btn-sm" lay-event="delete" id="permission24">删除</button>
+  </div>
+</script>
+<script type="text/html" id="toolbarUpdate">
+  <div class="layui-btn-container">
+    <button class="layui-btn layui-btn-sm" lay-event="update" id="permission23">编辑</button>
+  </div>
+</script>
+<script type="text/html" id="toolbarPermission">
+  <div class="layui-btn-container">
+    <button class="layui-btn layui-btn-sm" lay-event="permission" id="permission25">授权</button>
   </div>
 </script>
 <script type="text/javascript">
@@ -116,30 +124,65 @@
   form.render(null, 'permissionTreeParent')
   layui.use('table', function () {
     table = layui.table;
-    table.render({
-      elem: '#test'
-      , method: 'get'
-      , headers: {
-        token: token
+
+    const role = window.sessionStorage.getItem('userRole')
+    const permissionArray = []
+    const permissionCallback = function (res) {
+      const permissionData = res.data.records
+      for (const p of permissionData) {
+        if (p.permissionLevel === 3) {
+          permissionArray.push(p.permissionId)
+        }
       }
-      , url: basePath + '/role/list'
-      , cols: [[
-        {type:'checkbox'},
-        ,{ type: 'numbers', title: '序号', width: '10%'  }
-        {field: 'roleId', width: '20%', title: 'ID', sort: true}
+      let columns = [[
+        {type: 'checkbox'},
+        {type: 'numbers', title: '序号', width: '10%'}
+        , {field: 'roleId', width: '20%', title: 'ID', sort: true}
         , {field: 'roleName', width: '20%', title: '角色名称'}
-        , {fixed: 'right', width: '60%', align: 'center', toolbar: '#toolbarDemo'}
       ]]
-      , parseData: function (res) { //res 即为原始返回的数据
-        return {
-          "code": res.code, //解析接口状态
-          "msg": res.msg, //解析提示文本
-          "count": res.count, //解析数据长度
-          "data": res.data.records //解析数据列表
-        };
-      },
-      page:true
-    });
+
+
+      function generateColumns(permissionId, buttonId) {
+        if (permissionArray.includes(permissionId)) {
+          columns[0].push(
+            {fixed: 'right', width: '10%', align: 'center', toolbar: buttonId})
+        }
+      }
+
+      generateColumns(24, '#toolbarDelete')
+      generateColumns(23, '#toolbarUpdate')
+      generateColumns(23, '#toolbarPermission')
+
+
+      form.render()
+      table.render({
+        elem: '#test'
+        , method: 'get'
+        , headers: {
+          token: token
+        }
+        , url: basePath + '/role/list'
+        , cols: columns
+        , parseData: function (res) { //res 即为原始返回的数据
+          return {
+            "code": res.code, //解析接口状态
+            "msg": res.msg, //解析提示文本
+            "count": res.count, //解析数据长度
+            "data": res.data.records //解析数据列表
+          };
+        },
+        page: true
+      });
+      for (let i = 20; i < 23; i++) {
+        if (permissionArray.includes(i)) {
+          $('#permission' + i).show()
+        } else {
+          $('#permission' + i).hide()
+        }
+      }
+    }
+    ajaxGet('/role/listByRoleId', {roleId: role}, token, permissionCallback)
+
   });
 
   table.on('tool(test)', function (obj) { //注：tool 是工具条事件名，test 是 table 原始容器的属性 lay-filter="对应的值"
@@ -181,7 +224,7 @@
     const callback = function (res) {
       generateTree(res.data.records, roleId)
     }
-    ajaxGet('/permission/list', null, token, callback)
+    ajaxGet('/permission/list', {limit: 50}, token, callback)
     layui.use('layer', function () {
       let layer = layui.layer;
       layer.open({
@@ -300,7 +343,6 @@
           {
             'id': p.permissionId,
             'title': p.permissionName,
-            'checked': checked.includes(p.permissionId),
             'children': []
           }
         )
@@ -313,8 +355,23 @@
             d.children.push({
               'id': p.permissionId,
               'title': p.permissionName,
-              'checked': checked.includes(p.permissionId)
+              'children': []
             })
+          }
+        }
+      }
+    }
+    for (const p of permissionData) {
+      if (p.permissionLevel === 3) {
+        for (const d of data) {
+          for (const dd of d.children) {
+            if (dd.id === p.permissionParent) {
+              dd.children.push({
+                'id': p.permissionId,
+                'title': p.permissionName,
+                'checked': checked.includes(p.permissionId)
+              })
+            }
           }
         }
       }
