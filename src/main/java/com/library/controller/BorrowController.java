@@ -1,5 +1,6 @@
 package com.library.controller;
 
+import com.library.entity.BookLike;
 import com.library.entity.Borrow;
 import com.library.entity.Borrow;
 import com.library.entity.BorrowVo;
@@ -79,6 +80,24 @@ public class BorrowController {
             return ResponseEntity.data(borrowPageBean);
         } else {
             return ResponseEntity.ok();
+        }
+    }
+
+    @ApiOperation("通过图书ID和用户ID删除")
+    @PostMapping(value = "/deleteByBookIdAndUserId")
+    public ResponseEntity deleteByBookIdAndUserId(@RequestBody BookLike bookLike) {
+        borrowService.deleteByBookIdAndUserId(bookLike);
+        return ResponseEntity.ok();
+    }
+
+    @ApiOperation("通过图书ID和用户ID查询记录")
+    @PostMapping(value = "/selectByBookIdAndUserId")
+    public ResponseEntity selectByBookIdAndUserId(@RequestBody BookLike bookLike) {
+        Borrow borrow = borrowService.selectByBookIdAndUserId(bookLike);
+        if (borrow != null) {
+            return ResponseEntity.ok();
+        } else {
+            return ResponseEntity.serverInternalError();
         }
     }
 

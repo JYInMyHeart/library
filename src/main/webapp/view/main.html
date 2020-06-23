@@ -1,103 +1,129 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Title</title>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" href="/static/css/bootstrap.min.css"/>
-    <link rel="stylesheet" href="/static/layui/css/layui.css"/>
+  <title>Title</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/static/css/bootstrap.min.css"/>
+  <link rel="stylesheet" href="/static/layui/css/layui.css"/>
 </head>
 <body class="layui-layout-body">
 <div class="layui-layout layui-layout-admin">
-    <div class="layui-header">
-        <div class="layui-logo" style="font-size: 17px;"><strong>图书管理系统</strong></div>
-        <ul class="layui-nav layui-layout-left">
-            <li class="layui-nav-item"><a href="/view/main.html"
-                                          style="text-decoration: none;"><strong>首页</strong></a>
-            </li>
-        </ul>
-        <ul class="layui-nav layui-layout-right">
-            <li class="layui-nav-item">
-                <a href="javascript:;" style="text-decoration: none;">
-                    <img id="logo"  class="layui-nav-img">
-                    <strong id="username_top"></strong>
-                </a>
-            </li>
-            <li class="layui-nav-item"><a onclick="logout()"
-                                          style="text-decoration: none;;"><strong>退出</strong></a>
-            </li>
-        </ul>
-    </div>
+  <div class="layui-header">
+    <div class="layui-logo" style="font-size: 17px;"><strong>图书管理系统</strong></div>
+    <ul class="layui-nav layui-layout-left">
+      <li class="layui-nav-item"><a href="/view/main.html"
+                                    style="text-decoration: none;"><strong>首页</strong></a>
+      </li>
+    </ul>
+    <ul class="layui-nav layui-layout-right">
+      <li class="layui-nav-item">
+        <a href="javascript:;" style="text-decoration: none;">
+          <img id="logo" class="layui-nav-img">
+          <strong id="username_top"></strong>
+        </a>
+      </li>
+      <li class="layui-nav-item"><a onclick="logout()"
+                                    style="text-decoration: none;;"><strong>退出</strong></a>
+      </li>
+    </ul>
+  </div>
 
-    <div class="layui-side layui-bg-black">
-        <div class="layui-side-scroll">
-            <!-- 左侧导航区域（可配合layui已有的垂直导航） -->
-            <ul class="layui-nav layui-nav-tree" lay-filter="test" id="menu">
-                <%--                动态生成标签页--%>
-            </ul>
-        </div>
+  <div class="layui-side layui-bg-black">
+    <div class="layui-side-scroll">
+      <!-- 左侧导航区域（可配合layui已有的垂直导航） -->
+      <ul class="layui-nav layui-nav-tree" lay-filter="test" id="menu">
+        <%-- 动态生成标签页--%>
+      </ul>
     </div>
-    <!-- 以上都是共享内容 -->
+  </div>
+  <!-- 以上都是共享内容 -->
 
-    <!-- 内容主体区域 -->
-    <div class="layui-body">
-        <div id="content">
-            <div style="font-size: 45px;color: #1D9D73;margin-top: 300px;" class="text-center">
-                <strong>欢迎登录图书管理系统</strong></div>
-            <p class="text-center">
-                <strong style="color: #1D9D73;"></strong>
-            </p>
-        </div>
+  <!-- 内容主体区域 -->
+  <div class="layui-body">
+    <div id="content">
+      <div style="font-size: 45px;color: #1D9D73;margin-top: 300px;" class="text-center">
+        <strong>欢迎登录图书管理系统</strong></div>
+      <p class="text-center">
+        <strong style="color: #1D9D73;"></strong>
+      </p>
     </div>
+  </div>
 
-    <div class="layui-footer">
-        <!-- 底部固定区域 -->
-        <strong>©2019-2059 图书管理系统</strong>
-    </div>
+  <div class="layui-footer">
+    <!-- 底部固定区域 -->
+    <strong>©2019-2059 图书管理系统</strong>
+  </div>
+
 </div>
+<div style="padding: 50px; line-height: 22px; background-color: #393D49; color: #fff; font-weight: 300;" id="punlish"
+     hidden></div>
 </body>
 <script src="../static/layui/layui.js"></script>
 <script src="../static/js/bootstrap.js"></script>
 <script src="../static/js/jquery-3.3.1.min.js"></script>
 <script src="../static/js/ajax.js"></script>
 <script type="text/javascript">
-  var element
+  let element
+  let layer
   layui.use('element', function () {
-     element = layui.element;
+    element = layui.element;
   });
   layui.use('layer', function () {
-    var layer = layui.layer;
+    layer = layui.layer;
   });
   const token = window.sessionStorage.getItem('token')
   window.onload = function () {
+    tokenValid();
     menu();
     // queryApproval()
-    // queryNote()
+    queryNote()
     const username = window.sessionStorage.getItem('username')
     const userLogo = window.sessionStorage.getItem('userLogo')
     $('#username_top').text(username)
-    $('#logo').attr("src","data:image/jpg;base64," + userLogo)
+    $('#logo').attr("src", "data:image/jpg;base64," + userLogo)
 
   }
 
+  function tokenValid(){
+    const token = window.sessionStorage.getItem('token')
+    if(token == null){
+      window.location.href = "/"
+    }
+  }
+
+
   function queryNote() {
-    const userRole = window.sessionStorage.getItem('userRole')
-    if (userRole !== '管理员') {
-      const callback = function (res) {
-        const temp = res.data.slice(0, 1)
+    const callback = function (res) {
+      const usernames = []
+      for (const record of res.data.records) {
+        if (record.borrowPunish) {
+          usernames.push(record.userName)
+        }
+      }
+      const punishName = usernames.join(",")
+      if (punishName !== '') {
+        const noteContent = punishName.includes(",") ? punishName + "等同学借书不还!" : punishName + "同学借书不还!"
+        $('#punlish').text(noteContent)
         layer.open({
-          title: '提示',
-          offset: 'rt'``
-          , content: temp[0].content,
-          yes: function (index, layero) {
-            //do something
-            reloadBody('/view/noteList.jsp')
-            layer.close(index); //如果设定了yes回调，需进行手工关闭
+          type: 1
+          , title: false //不显示标题栏
+          , closeBtn: true
+          , area: '300px;'
+          , shade: 0.8
+          , id: 'LAY_layuipro' //设定一个id，防止重复弹出
+          , btn: ['谴责他']
+          , btnAlign: 'c'
+          , moveType: 1 //拖拽模式，0或者1
+          , content: $('#punlish')
+          , success: function (layero) {
+            var btn = layero.find('.layui-layer-btn');
+
           }
         });
       }
-      ajaxPost('/note/list', null, token,callback)
     }
+    ajaxGet('/borrow/list', null, token, callback)
   }
 
   function queryApproval() {
@@ -122,13 +148,13 @@
       const postData = {
         committer: username
       }
-      ajaxPost('/approval/listByName', postData,token, callback)
+      ajaxPost('/approval/listByName', postData, token, callback)
     }
   }
 
   function reloadBody(url) {
     $('#content').html(
-        '<object type="text/html" data="' + url + '" width="100%" height="800px"></object>')
+      '<object type="text/html" data="' + url + '" width="100%" height="800px"></object>')
   }
 
   function logout() {
@@ -148,13 +174,13 @@
           let menuIndex = m.permissionId
           if (menuLevel === 1) {
             let li = '<li class="layui-nav-item" id="li' + menuIndex
-                + '" ><a style="text-decoration: none;"><strong><span class="fa fa-leaf fa-fw"></span>&nbsp;&nbsp;&nbsp;'
-                + menuName + '</strong></a></li>'
+              + '" ><a style="text-decoration: none;"><strong><span class="fa fa-leaf fa-fw"></span>&nbsp;&nbsp;&nbsp;'
+              + menuName + '</strong></a></li>'
             $('#menu').append(li)
           } else if (menuLevel === 2) {
             let dl = '<dl class="layui-nav-child"><dd><a href="javascript:;" onclick="reloadBody(\''
-                + menuUrl + '\')" style="text-decoration: none;"><strong>' + menuName
-                + '</strong></a></dd></dl>'
+              + menuUrl + '\')" style="text-decoration: none;"><strong>' + menuName
+              + '</strong></a></dd></dl>'
             $('#li' + menuParent + '').append(dl)
           }
         }
@@ -165,8 +191,8 @@
         return false;
       }
     }
-    const param = {'userAccount':window.sessionStorage.getItem('userAccount')}
-    ajaxGet('/user/menu',param ,token, callback)
+    const param = {'userAccount': window.sessionStorage.getItem('userAccount')}
+    ajaxGet('/user/menu', param, token, callback)
   }
 
 

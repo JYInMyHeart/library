@@ -28,10 +28,10 @@
           <input id="book_name" placeholder="请输入图书名称查询" class="layui-input" type="text">
         </div>
         <div class="layui-input-inline" style="margin-left: 50px;">
-          <button class="layui-btn" onclick="queryBook()">查询</button>
-          <button class="layui-btn" onclick="add()">添加</button>
+          <button class="layui-btn" onclick="queryBook()" id="permission26">查询</button>
+          <button class="layui-btn" onclick="add()" id="permission27">添加</button>
         </div>
-        <div class="layui-input-inline">
+        <div class="layui-input-inline" id="permission28">
           <button class="layui-btn" onclick="function exportData() {
             table.exportFile('test',table.data,'xls')
           }
@@ -138,7 +138,12 @@
 </script>
 <script type="text/html" id="toolbarDemo1">
   <div class="layui-btn-container">
-    <button class="layui-btn layui-btn-sm" lay-event="read">借阅</button>
+    <button class="layui-btn layui-btn-sm" lay-event="read" id="borrowButton">借阅/归还</button>
+  </div>
+</script>
+<script type="text/html" id="toolbarDemo2">
+  <div class="layui-btn-container">
+    <button class="layui-btn layui-btn-sm" lay-event="like" id="likeButton">点赞/取消点赞</button>
   </div>
 </script>
 <script type="text/html" id="imgTpl">
@@ -272,7 +277,7 @@
         {type: 'checkbox'}
         , {type: 'numbers', title: '序号', width: '10%'}
         , {field: 'bookName', width: '10%', title: '图书名'}
-        , {field: 'bookTag', width: '10%', title: '分类'}
+        , {field: 'bookTag', width: '10%', title: '点赞数'}
         , {field: 'bookAuthor', width: '20%', title: '作者'}
         , {
           field: 'bookPublishTime', title: '发布时间', width: '20%',
@@ -292,8 +297,9 @@
         }
       }
 
-      generateColumns(31, '#toolbarDemo')
-      generateColumns(29, '#toolbarDemo1')
+      generateColumns(31, '#toolbarDemo1')
+      generateColumns(29, '#toolbarDemo')
+      generateColumns(30, '#toolbarDemo2')
 
       table.render({
         elem: '#test'
@@ -329,6 +335,7 @@
     ajaxGet('/role/listByRoleId', {roleId: role}, token, permissionCallback)
   });
 
+
   table.on('tool(test)', function (obj) { //注：tool 是工具条事件名，test 是 table 原始容器的属性 lay-filter="对应的值"
     let data = obj.data; //获得当前行数据
     let layEvent = obj.event; //获得 lay-event 对应的值（也可以是表头的 event 参数对应的值）
@@ -344,10 +351,56 @@
       let result = update("修改", obj)
       obj.update(result);
     } else if (layEvent === 'read') {
-      read(obj.data.bookId)
+      borrow(obj.data.bookId)
+    } else if(layEvent === 'like'){
+      like(obj.data.bookId)
     }
   });
+  function like(bookId) {
+    const likeCallback = function(res){
+      layui.use('layer',function () {
+        const layer = layui.layer
+        layer.msg('点赞成功')
+      })
+    }
+    const dislikeCallback = function(res){
+      layui.use('layer',function () {
+        const layer = layui.layer
+        layer.msg('取消点赞成功')
+      })
+    }
 
+    const userId = window.sessionStorage.getItem('userId')
+    const data = {
+      userId: userId,
+      bookId: bookId
+    }
+    const isLikeCallback = function (res) {
+      if(res.code === 200){
+        ajaxPost('/book/dislike', data, token, dislikeCallback)
+      }else{
+        ajaxPost('/book/like', data, token, likeCallback)
+      }
+    }
+    ajaxPost('/book/islike',data,token,isLikeCallback)
+  }
+
+  function borrow(bookId){
+    const callback = function (res) {
+      if(res.code === 200){
+        readBack(bookId)
+      }else{
+        read(bookId)
+      }
+    }
+
+    const userId = window.sessionStorage.getItem('userId')
+    const data = {
+      userId: userId,
+      bookId: bookId
+    }
+    ajaxPost('/borrow/selectByBookIdAndUserId',data,token,callback)
+  }
   function read(bookId) {
     const callback = function (res) {
       layui.use('layer', function () {
@@ -372,6 +425,25 @@
       borrowTime: s3
     }
     ajaxPost('/borrow/add', data, token, callback)
+  }
+
+  function readBack(bookId){
+    const callback = function (res) {
+      layui.use('layer', function () {
+        const layer = layui.layer
+        if (res.code === 200) {
+          layer.msg('归还成功')
+        }else {
+          layer.msg('归还失败')
+        }
+      })
+    }
+    const userId = window.sessionStorage.getItem('userId')
+    const data = {
+      userId: userId,
+      bookId: bookId
+    }
+    ajaxPost('/borrow/deleteByBookIdAndUserId',data,token,callback)
   }
 
   function queryBook() {

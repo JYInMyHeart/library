@@ -1,5 +1,6 @@
 package com.library.controller;
 
+import com.alibaba.excel.EasyExcel;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.library.entity.PageBean;
 import com.library.entity.Permission;
@@ -16,11 +17,13 @@ import org.springframework.web.multipart.MultipartFile;
 import sun.misc.BASE64Encoder;
 
 import javax.annotation.Resource;
+import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -75,8 +78,24 @@ public class UserController {
     @ApiOperation("注册/添加用户")
     @PostMapping(value = "/add")
     public ResponseEntity add(@RequestBody User userPojo) {
+        if (userPojo.getRoleId() == null) {
+            userPojo.setRoleId(3);
+        }
         userService.insert(userPojo);
         return ResponseEntity.ok();
+    }
+
+    @ApiOperation("检查账号")
+    @GetMapping(value = "/checkName")
+    public ResponseEntity checkName(@RequestParam String name) {
+        User userPojo = new User();
+        userPojo.setUserAccount(name);
+        User user = userService.querySelective(userPojo);
+        if (user == null) {
+            return ResponseEntity.ok();
+        } else {
+            return ResponseEntity.serverInternalError();
+        }
     }
 
     /**
@@ -89,6 +108,13 @@ public class UserController {
                                      .map(Integer::parseInt)
                                      .collect(Collectors.toList()));
         return ResponseEntity.ok();
+    }
+
+    @ApiOperation("通过id查找用户")
+    @GetMapping(value = "/queryById")
+    public ResponseEntity queryById(@RequestParam("userId") Integer userId) {
+        User user = userService.queryById(userId);
+        return ResponseEntity.data(Collections.singletonList(user));
     }
 
     /**
@@ -118,6 +144,7 @@ public class UserController {
             return ResponseEntity.ok();
         }
     }
+
     @ApiOperation("用户菜单")
     @GetMapping(value = "/menu")
     public ResponseEntity menu(@RequestParam String userAccount) {

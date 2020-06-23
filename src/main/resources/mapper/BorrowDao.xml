@@ -9,6 +9,7 @@
         <result property="bookId" column="book_id" jdbcType="INTEGER"/>
         <result property="bookCount" column="book_count" jdbcType="INTEGER"/>
         <result property="borrowTime" column="borrow_time" jdbcType="TIMESTAMP"/>
+        <result property="borrowPunish" column="borrow_punish" jdbcType="BOOLEAN"/>
     </resultMap>
     <resultMap type="com.library.entity.BorrowVo" id="BorrowVoMap">
         <result property="borrowId" column="borrow_id" jdbcType="INTEGER"/>
@@ -17,6 +18,7 @@
         <result property="bookId" column="book_id" jdbcType="INTEGER"/>
         <result property="bookCount" column="book_count" jdbcType="INTEGER"/>
         <result property="borrowTime" column="borrow_time" jdbcType="TIMESTAMP"/>
+        <result property="borrowPunish" column="borrow_punish" jdbcType="BOOLEAN"/>
         <result property="bookName" column="book_name" jdbcType="VARCHAR"/>
         <result property="bookTag" column="book_tag" jdbcType="VARCHAR"/>
         <result property="bookAuthor" column="book_author" jdbcType="VARCHAR"/>
@@ -31,7 +33,7 @@
     <!--查询单个-->
     <select id="queryById" resultMap="BorrowMap">
         select
-          borrow_id, borrow_start_time, user_id, book_id, book_count, borrow_time
+          borrow_id, borrow_start_time, user_id, book_id, book_count, borrow_time,borrow_punish
         from library.borrow
         where borrow_id = #{borrowId}
     </select>
@@ -39,7 +41,7 @@
     <!--查询指定行数据-->
     <select id="queryAllByLimit" resultMap="BorrowMap">
         select
-          borrow_id, borrow_start_time, user_id, book_id, book_count, borrow_time
+          borrow_id, borrow_start_time, user_id, book_id, book_count, borrow_time,borrow_punish
         from library.borrow
         limit #{offset}, #{limit}
     </select>
@@ -47,7 +49,7 @@
     <!--通过实体作为筛选条件查询-->
     <select id="queryAll" resultMap="BorrowMap">
         select
-          borrow_id, borrow_start_time, user_id, book_id, book_count, borrow_time
+          borrow_id, borrow_start_time, user_id, book_id, book_count, borrow_time,borrow_punish
         from library.borrow
         <where>
             <if test="borrowId != null">
@@ -68,13 +70,16 @@
             <if test="borrowTime != null">
                 and borrow_time = #{borrowTime}
             </if>
+            <if test="borrowPunish != null">
+                and borrow_punish = #{borrowPunish}
+            </if>
         </where>
     </select>
 
     <!--新增所有列-->
     <insert id="insert" keyProperty="borrowId" useGeneratedKeys="true">
-        insert into library.borrow(borrow_start_time, user_id, book_id, book_count, borrow_time)
-        values (#{borrowStartTime}, #{userId}, #{bookId}, #{bookCount}, #{borrowTime})
+        insert into library.borrow(borrow_start_time, user_id, book_id, book_count, borrow_time,borrow_punish)
+        values (#{borrowStartTime}, #{userId}, #{bookId}, #{bookCount}, #{borrowTime}, #{borrowPunish})
     </insert>
 
     <!--通过主键修改数据-->
@@ -95,6 +100,9 @@
             </if>
             <if test="borrowTime != null">
                 borrow_time = #{borrowTime},
+            </if>
+            <if test="borrowPunish != null">
+                borrow_punish = #{borrowPunish},
             </if>
         </set>
         where borrow_id = #{borrowId}
@@ -138,6 +146,14 @@
         <if test="keyword != null and keyword != ''">
             and (u.user_name like concat('%',#{keyword},'%') or b.book_name like concat('%',#{keyword},'%'))
         </if>
+    </select>
+
+    <delete id="deleteByBookIdAndUserId">
+        delete from borrow where book_id = #{bookId} and user_id = #{userId}
+    </delete>
+
+    <select id="selectByBookIdAndUserId" resultMap="BorrowMap">
+        select * from borrow where book_id = #{bookId} and user_id = #{userId}
     </select>
 
 </mapper>

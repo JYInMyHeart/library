@@ -1,6 +1,7 @@
 package com.library.service;
 
 import com.library.entity.Book;
+import com.library.entity.BookLike;
 import com.library.entity.PageBean;
 
 import java.util.List;
@@ -56,4 +57,10 @@ public interface BookService {
     PageBean<Book> selectBookByPage(int page, int limit, String sort, String asc, String keyword);
 
     void insertList(List<Book> list);
+
+    void like(BookLike bookLike);
+
+    void dislike(BookLike bookLike);
+
+    boolean islike(BookLike bookLike);
 }

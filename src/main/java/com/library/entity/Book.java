@@ -19,7 +19,7 @@ public class Book implements Serializable {
     private Integer bookId;
     @ExcelProperty("图书名")
     private String bookName;
-    @ExcelProperty("分类")
+    @ExcelProperty("点赞数")
     private String bookTag;
     @ExcelProperty("作者")
     private String bookAuthor;

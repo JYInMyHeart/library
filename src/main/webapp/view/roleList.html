@@ -78,7 +78,7 @@
         id="editOrAdd">
     <div class="layui-form-item">
       <label class="layui-form-label">名称</label>
-      <div class="layui-input-block">
+      <div class="layui-input-inline">
         <input type="text" name="role_name" required lay-verify="required"
                autocomplete="off" placeholder="请输入角色名称" class="layui-input">
       </div>
@@ -313,7 +313,7 @@
       layer.open({
         type: 1,
         title: "修改角色信息",
-        area: ['100px', '150px'],
+        area: ['300px', '350px'],
         content: $("#editOrAdd"),
         btn: ['确定'],
         yes: function (index, layero) {

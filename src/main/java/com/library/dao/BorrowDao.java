@@ -64,4 +64,7 @@ public interface BorrowDao extends BaseDao<BorrowVo>{
      */
     int deleteById(@Param("borrowIds") List<Integer> borrowIds);
 
+    void deleteByBookIdAndUserId(@Param("bookId") Integer bookId, @Param("userId")Integer userId);
+
+    Borrow selectByBookIdAndUserId(@Param("bookId") Integer bookId, @Param("userId")Integer userId);
 }

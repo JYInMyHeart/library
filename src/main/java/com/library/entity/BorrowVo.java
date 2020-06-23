@@ -20,6 +20,8 @@ public class BorrowVo {
 
     private Date borrowTime;
 
+    private Boolean borrowPunish;
+
     private String bookName;
 
     private String bookTag;
@@ -37,6 +39,14 @@ public class BorrowVo {
     private Integer wareCount;
 
     private Integer wareTotal;
+
+    public Boolean getBorrowPunish() {
+        return borrowPunish;
+    }
+
+    public void setBorrowPunish(Boolean borrowPunish) {
+        this.borrowPunish = borrowPunish;
+    }
 
     public Integer getWareTotal() {
         return wareTotal;

@@ -22,16 +22,16 @@
   <hr style="margin-top: 0;"/>
   <div class="form table">
     <div>
-      <div class="layui-form-item">
+      <div class="layui-form-item" >
         <label class="layui-form-label" style="margin-left: -10px;padding-left:0;"><strong>库存名称</strong></label>
         <div class="layui-input-inline">
           <input id="ware_name" placeholder="请输入库存名称查询" class="layui-input" type="text">
         </div>
         <div class="layui-input-inline" style="margin-left: 50px;">
-          <button class="layui-btn" onclick="queryWare()">查询</button>
-          <button class="layui-btn" onclick="add()">添加</button>
+          <button class="layui-btn" onclick="queryWare()" id="permission33">查询</button>
+          <button class="layui-btn" onclick="add()" id="permission34">添加</button>
         </div>
-        <div class="layui-input-inline">
+        <div class="layui-input-inline" id="permission35">
           <button class="layui-btn" onclick="function exportData() {
             table.exportFile('test',table.data,'xls')
           }
@@ -98,6 +98,7 @@
     <button class="layui-btn layui-btn-sm" lay-event="update">编辑</button>
   </div>
 </script>
+
 <script type="text/javascript">
   const token = window.sessionStorage.getItem('token')
   var element
@@ -153,37 +154,62 @@
 
   layui.use('table', function () {
     table = layui.table;
-    let role = window.sessionStorage.getItem('userRole');
-    let columns = [[
-      {type: 'checkbox'},
-      {type: 'numbers', title: '序号', width: '10%'}
-      , {field: 'wareCount', width: '30%', title: '剩余数'}
-      , {field: 'wareTotal', title: '库存总数', width: '30%'}
-      , {field: 'bookName', title: '书名', width: '30%'}
+    const role = window.sessionStorage.getItem('userRole')
+    const permissionArray = []
+    const permissionCallback = function (res) {
+      const permissionData = res.data.records
+      for (const p of permissionData) {
+        if (p.permissionLevel === 3) {
+          permissionArray.push(p.permissionId)
+        }
+      }
+      let columns = [[
+        {type: 'checkbox'},
+        {type: 'numbers', title: '序号', width: '10%'}
+        , {field: 'wareCount', width: '10%', title: '剩余数'}
+        , {field: 'wareTotal', title: '库存总数', width: '10%'}
+        , {field: 'bookName', title: '书名', width: '20%'}
 
-    ]]
-    if (role !== '1') {
-      columns[0].push(
-        {fixed: 'right', width: '20%', align: 'center', toolbar: '#toolbarDemo', id: 'tool'})
+      ]]
+
+
+      function generateColumns(permissionId, buttonId) {
+        if (permissionArray.includes(permissionId)) {
+          columns[0].push(
+            {fixed: 'right', width: '10%', align: 'center', toolbar: buttonId})
+        }
+      }
+
+      generateColumns(36, '#toolbarDemo')
+
+      for (let i = 33; i < 36; i++) {
+        if (permissionArray.includes(i)) {
+          $('#permission' + i).show()
+        } else {
+          $('#permission' + i).hide()
+        }
+      }
+
+      table.render({
+        elem: '#test'
+        , method: 'get'
+        , page: true
+        , headers: {
+          token: token
+        }
+        , url: basePath + '/ware/list'
+        , cols: columns
+        , parseData: function (res) { //res 即为原始返回的数据
+          return {
+            "code": res.code, //解析接口状态
+            "msg": res.msg, //解析提示文本
+            "count": res.count, //解析数据长度
+            "data": res.data.records //解析数据列表
+          };
+        }
+      });
     }
-    table.render({
-      elem: '#test'
-      , method: 'get'
-      , page: true
-      , headers: {
-        token: token
-      }
-      , url: basePath + '/ware/list'
-      , cols: columns
-      , parseData: function (res) { //res 即为原始返回的数据
-        return {
-          "code": res.code, //解析接口状态
-          "msg": res.msg, //解析提示文本
-          "count": res.count, //解析数据长度
-          "data": res.data.records //解析数据列表
-        };
-      }
-    });
+    ajaxGet('/role/listByRoleId', {roleId: role}, token, permissionCallback)
   });
 
   table.on('tool(test)', function (obj) { //注：tool 是工具条事件名，test 是 table 原始容器的属性 lay-filter="对应的值"
@@ -251,7 +277,7 @@
     return result
   }
 
-  function update(type, obj) {
+  function update( obj) {
     let result = {}
     layui.use('layer', function () {
       let layer = layui.layer;

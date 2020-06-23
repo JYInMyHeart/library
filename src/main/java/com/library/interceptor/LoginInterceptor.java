@@ -34,6 +34,9 @@ public class LoginInterceptor implements HandlerInterceptor {
         // 在拦截点执行前拦截，如果返回true则不执行拦截点后的操作（拦截成功）
         // 返回false则不执行拦截
         String token = request.getHeader("token");
+        if (token == null || token.equals("null")) {
+            return false;
+        }
         globalToken = token;
         //token不存在
         if (StringUtils.isBlank(token) || MyUtil.judgeToken(token)) {

@@ -1,5 +1,6 @@
 package com.library.service;
 
+import com.library.entity.BookLike;
 import com.library.entity.Borrow;
 import com.library.entity.BorrowVo;
 import com.library.entity.PageBean;
@@ -55,4 +56,8 @@ public interface BorrowService {
     void deleteById(List<Integer> borrowId);
 
     PageBean<BorrowVo> selectBorrowByPage(int page, int limit, String sort, String asc, String keyword);
+
+    void deleteByBookIdAndUserId(BookLike bookLike);
+
+    Borrow selectByBookIdAndUserId(BookLike bookLike);
 }

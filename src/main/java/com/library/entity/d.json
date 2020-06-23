@@ -1,0 +1,15 @@
+{
+  "service" : "Bitsflow",
+  "readmePath" : "README.md",
+  "components" : [
+    {
+      "componentName" : "bitsflow",
+      "supportVersion" : "#{COMPONENT_VERSION} >= 1.3.2.21.74",
+      "targetVersion" : "1.3.2.21.84",
+      "scriptType" : "shell",
+      "scriptPath" : "#{COMPONENT_PATH}/scripts/upgrade_agent.sh",
+      "confirm" : ["Agent及依赖服务已手动停止","已完成Groupd手动备份"],
+      "description" : "支持 2.21.74 以上版本的 Bitsflow 升级到 2.21.92"
+    }
+  ]
+}

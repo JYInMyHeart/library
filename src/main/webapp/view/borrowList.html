@@ -28,10 +28,10 @@
           <input id="borrow_name" placeholder="请输入借阅名称查询" class="layui-input" type="text">
         </div>
         <div class="layui-input-inline" style="margin-left: 50px;">
-          <button class="layui-btn" onclick="queryBorrow()">查询</button>
-          <button class="layui-btn" onclick="add()">添加</button>
+          <button class="layui-btn" onclick="queryBorrow()" id="permission38">查询</button>
+          <button class="layui-btn" onclick="add()" id="permission39">添加</button>
         </div>
-        <div class="layui-input-inline">
+        <div class="layui-input-inline" id="permission40">
           <button class="layui-btn" onclick="function exportData() {
             table.exportFile('test',table.data,'xls')
           }
@@ -108,6 +108,11 @@
     <button class="layui-btn layui-btn-sm" lay-event="update">编辑</button>
   </div>
 </script>
+<script type="text/html" id="toolbarDemo1">
+  <div class="layui-btn-container">
+    <button class="layui-btn layui-btn-sm" lay-event="punish">惩罚</button>
+  </div>
+</script>
 <script type="text/javascript">
   const token = window.sessionStorage.getItem('token')
   var element
@@ -119,8 +124,8 @@
   layui.use('laypage', function () {
     laypage = layui.laypage
   });
-  layui.use('util',function () {
-     util = layui.util
+  layui.use('util', function () {
+    util = layui.util
   })
   layui.use('laydate', function () {
     var laydate = layui.laydate;
@@ -187,51 +192,78 @@
   form.render()
   layui.use('table', function () {
     table = layui.table;
-    let role = window.sessionStorage.getItem('userRole');
-    let columns = [[
-      {type: 'checkbox'}
-      ,{ type: 'numbers', title: '序号', width: '10%'  }
-      ,{field: 'bookName', width: '20%', title: '书名', sort: true}
-      , {field: 'userName', title: '借阅人', width: '20%'}
-      , {field: 'wareCount', title: '可借阅数量', width: '20%'}
-      , {field: 'bookCount', title: '借阅数', width: '20%'}
-      , {field: 'wareTotal', title: '书籍总数', width: '20%'}
-      , {
-        field: 'borrowStartTime', title: '借阅开始时间', width: '20%',
-        templet: function (d) {
-          return ''+ util.toDateString(d.borrowStartTime,'yyyy-MM-dd')
+    const role = window.sessionStorage.getItem('userRole')
+    const permissionArray = []
+    const permissionCallback = function (res) {
+      const permissionData = res.data.records
+      for (const p of permissionData) {
+        if (p.permissionLevel === 3) {
+          permissionArray.push(p.permissionId)
         }
       }
-      , {
-        field: 'borrowTime', title: '借阅结束时间', width: '20%',
-        templet: function (d) {
-          return ''+ util.toDateString(d.borrowTime,'yyyy-MM-dd')
+      let columns = [[
+        {type: 'checkbox'}
+        , {type: 'numbers', title: '序号', width: '10%'}
+        , {field: 'bookName', width: '20%', title: '书名', sort: true}
+        , {field: 'userName', title: '借阅人', width: '20%'}
+        , {field: 'wareCount', title: '可借阅数量', width: '20%'}
+        , {field: 'bookCount', title: '借阅数', width: '20%'}
+        , {field: 'wareTotal', title: '书籍总数', width: '20%'}
+        , {
+          field: 'borrowStartTime', title: '借阅开始时间', width: '20%',
+          templet: function (d) {
+            return '' + util.toDateString(d.borrowStartTime, 'yyyy-MM-dd')
+          }
+        }
+        , {
+          field: 'borrowTime', title: '借阅结束时间', width: '20%',
+          templet: function (d) {
+            return '' + util.toDateString(d.borrowTime, 'yyyy-MM-dd')
+          }
+        }
+
+      ]]
+
+
+      function generateColumns(permissionId, buttonId) {
+        if (permissionArray.includes(permissionId)) {
+          columns[0].push(
+            {fixed: 'right', width: '10%', align: 'center', toolbar: buttonId, id: 'tool'})
         }
       }
 
-    ]]
-    if (role === '1') {
-      columns[0].push(
-        {fixed: 'right', width: '20%', align: 'center', toolbar: '#toolbarDemo', id: 'tool'})
+      generateColumns(41, '#toolbarDemo')
+      generateColumns(44, '#toolbarDemo1')
+
+      for (let i = 38; i < 40; i++) {
+        if (permissionArray.includes(i)) {
+          $('#permission' + i).show()
+        } else {
+          $('#permission' + i).hide()
+        }
+      }
+
+
+      table.render({
+        elem: '#test'
+        , method: 'get'
+        , page: true
+        , headers: {
+          token: token
+        }
+        , url: basePath + '/borrow/list'
+        , cols: columns
+        , parseData: function (res) { //res 即为原始返回的数据
+          return {
+            "code": res.code, //解析接口状态
+            "msg": res.msg, //解析提示文本
+            "count": res.count, //解析数据长度
+            "data": res.data.records //解析数据列表
+          };
+        }
+      });
     }
-    table.render({
-      elem: '#test'
-      , method: 'get'
-      , page: true
-      , headers: {
-        token: token
-      }
-      , url: basePath + '/borrow/list'
-      , cols: columns
-      , parseData: function (res) { //res 即为原始返回的数据
-        return {
-          "code": res.code, //解析接口状态
-          "msg": res.msg, //解析提示文本
-          "count": res.count, //解析数据长度
-          "data": res.data.records //解析数据列表
-        };
-      }
-    });
+    ajaxGet('/role/listByRoleId', {roleId: role}, token, permissionCallback)
   });
 
   table.on('tool(test)', function (obj) { //注：tool 是工具条事件名，test 是 table 原始容器的属性 lay-filter="对应的值"
@@ -255,8 +287,11 @@
     } else if (layEvent === 'update') { //编辑
       let result = update(obj)
       obj.update(result);
+    }else if(layEvent === 'punish'){
+      punish(data)
     }
   });
+
 
   function queryBorrow() {
     let borrow_name = $('#borrow_name').val()
@@ -271,7 +306,22 @@
     });
     return false
   }
+  function punish(borrowObj){
+    const data = {
+      userId:borrowObj.userId,
+      borrowId:borrowObj.borrowId,
+      borrowPunish:true
+    }
+    const callback = function(res){
+      if(res.code === 200){
+        layer.msg("惩罚成功")
+      }else{
+        layer.msg("惩罚失败")
+      }
+    }
+    ajaxPost('/borrow/update',data,token,callback)
 
+  }
 
   function add() {
     let result = {}

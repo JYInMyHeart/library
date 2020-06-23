@@ -3,6 +3,7 @@ package com.library.service.impl;
 import com.library.dao.BookDao;
 import com.library.dao.WareDao;
 import com.library.entity.Book;
+import com.library.entity.BookLike;
 import com.library.entity.Borrow;
 import com.library.dao.BorrowDao;
 import com.library.entity.BorrowVo;
@@ -111,5 +112,18 @@ public class BorrowServiceImpl implements BorrowService {
     public PageBean<BorrowVo> selectBorrowByPage(int page, int limit, String sort, String asc, String keyword) {
         PageUtil<BorrowVo, BorrowDao> pageUtil = new PageUtil<>(borrowDao);
         return pageUtil.helper(page, limit, sort, asc, keyword);
+    }
+
+    @Override
+    public void deleteByBookIdAndUserId(BookLike bookLike) {
+        borrowDao.deleteByBookIdAndUserId(bookLike.getBookId(),bookLike.getUserId());
+        Ware ware = wareDao.queryByBookId(bookLike.getBookId());
+        ware.setWareCount(ware.getWareCount() + 1);
+        wareDao.update(ware);
+    }
+
+    @Override
+    public Borrow selectByBookIdAndUserId(BookLike bookLike) {
+        return borrowDao.selectByBookIdAndUserId(bookLike.getBookId(),bookLike.getUserId());
     }
 }

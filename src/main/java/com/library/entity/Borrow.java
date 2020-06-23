@@ -24,6 +24,15 @@ public class Borrow implements Serializable {
     
     private Date borrowTime;
 
+    private Boolean borrowPunish;
+
+    public Boolean getBorrowPunish() {
+        return borrowPunish;
+    }
+
+    public void setBorrowPunish(Boolean borrowPunish) {
+        this.borrowPunish = borrowPunish;
+    }
 
     public Integer getBorrowId() {
         return borrowId;

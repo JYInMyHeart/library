@@ -1,8 +1,10 @@
 package com.library.service.impl;
 
+import com.library.dao.BookLikeMapper;
 import com.library.dao.UserDao;
 import com.library.entity.Book;
 import com.library.dao.BookDao;
+import com.library.entity.BookLike;
 import com.library.entity.PageBean;
 import com.library.entity.UserVo;
 import com.library.service.BookService;
@@ -10,6 +12,7 @@ import com.library.util.PageUtil;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
+import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -22,6 +25,9 @@ import java.util.List;
 public class BookServiceImpl implements BookService {
     @Resource
     private BookDao bookDao;
+
+    @Resource
+    private BookLikeMapper bookLikeMapper;
 
     /**
      * 通过ID查询单条数据
@@ -84,11 +90,33 @@ public class BookServiceImpl implements BookService {
     @Override
     public PageBean<Book> selectBookByPage(int page, int limit, String sort, String asc, String keyword) {
         PageUtil<Book, BookDao> pageUtil = new PageUtil<>(bookDao);
-        return pageUtil.helper(page,limit,sort,asc,keyword);
+        PageBean<Book> bookPageBean = pageUtil.helper(page, limit, sort, asc, keyword);
+        bookPageBean.getLists().forEach(book -> {
+            int likeCount = bookLikeMapper.likeCount(book.getBookId());
+            book.setBookTag("" + likeCount);
+        });
+        bookPageBean.getLists().sort((b1,b2) -> b2.getBookTag().compareTo(b1.getBookTag()));
+        return bookPageBean;
     }
 
     @Override
     public void insertList(List<Book> list) {
         bookDao.insertList(list);
+    }
+
+    @Override
+    public void like(BookLike bookLike) {
+        bookLikeMapper.insertSelective(bookLike);
+    }
+
+    @Override
+    public void dislike(BookLike bookLike) {
+        bookLikeMapper.deleteByPrimaryKey(bookLike.getBookId(),bookLike.getUserId());
+    }
+
+    @Override
+    public boolean islike(BookLike bookLike) {
+        BookLike bookLike1 = bookLikeMapper.selectSelective(bookLike);
+        return bookLike1 != null;
     }
 }
